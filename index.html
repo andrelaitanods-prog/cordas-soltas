@@ -78,7 +78,9 @@ aside { padding: 24px 24px 24px 0; display: flex; flex-direction: column; gap: 1
 @keyframes bob { 50% { transform: translateY(-5px); } }
 .stars { display: inline-flex; gap: 2px; }
 .stars svg { width: 18px; height: 18px; }
-.mascot { position: absolute; width: 116px; pointer-events: none; }
+.mascot { position: absolute; width: 128px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.mascot span { font-size: 14px; font-weight: 800; color: var(--k); background: var(--soft); border-radius: 9px; padding: 2px 10px; }
+.mascot:hover svg { transform: translateY(-3px); } .mascot svg { transition: transform .15s; }
 
 /* lição */
 #lesson { position: fixed; inset: 0; background: var(--bg); z-index: 20; display: flex; flex-direction: column; overflow: auto; }
@@ -106,10 +108,12 @@ aside { padding: 24px 24px 24px 0; display: flex; flex-direction: column; gap: 1
 .track .mid { position: absolute; left: 50%; top: 6px; width: 4px; margin-left: -2px; height: 28px; border-radius: 2px; background: var(--ok); }
 .track .ndl { position: absolute; left: 50%; top: 4px; width: 14px; height: 32px; margin-left: -7px; border-radius: 8px; background: var(--ink); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--ink); transition: left .07s linear; opacity: .18; }
 .strs { border: 2px solid var(--line); border-radius: 18px; padding: 8px 16px; display: flex; gap: 14px; }
+.live.solo { grid-template-columns: auto; justify-content: center; } .live.solo .meter { display: none; }
 .str { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 14px; font-weight: 800; color: var(--mute); width: 34px; }
 .str i { flex: 1; min-height: 34px; border-radius: 4px; background: var(--line2); }
 .str.next b { outline: 2px dashed var(--c); outline-offset: 1px; }
 .str b { width: 32px; border-radius: 9px; text-align: center; line-height: 25px; }
+.str em { font-style: normal; font-size: 12px; font-weight: 800; color: #8d86a0; line-height: 1; } .str u { text-decoration: none; font-weight: 900; font-size: 14px; line-height: 1; visibility: hidden; color: var(--k); } .str.now u { visibility: visible; }
 .str.now b { background: var(--c); color: #fff; }
 .str.now i { background: var(--c); }
 .str.hit i { background: var(--ok); }
@@ -150,6 +154,14 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .drawer.warn { background: var(--warns); border-color: var(--warns); color: var(--warnk); }
 .drawer.bad { background: var(--bads); border-color: var(--bads); color: var(--badk); }
 .drawer.plain .fb .ic { background: var(--wash); color: var(--c); }
+
+.snd { display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--line); border-radius: 13px; padding: 8px 12px; font-size: 14px; font-weight: 800; color: var(--mute); background: #fff; flex: none; }
+.snd[aria-pressed=true] { border-color: var(--c); background: var(--soft); color: var(--k); }
+.snd[aria-pressed=false] span:last-child { text-decoration: line-through; }
+.vu { display: inline-flex; align-items: flex-end; gap: 2px; height: 16px; } .vu i { width: 4px; border-radius: 2px; background: currentColor; opacity: .25; } .vu i:nth-child(1) { height: 6px; } .vu i:nth-child(2) { height: 11px; } .vu i:nth-child(3) { height: 16px; }
+.lnk { font-weight: 800; font-size: 15px; color: var(--mute); text-decoration: underline; text-underline-offset: 3px; padding: 8px 0; text-align: left; }
+.hand { display: flex; flex-wrap: wrap; gap: 8px; } .hand span { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--mute); border: 2px solid var(--line); border-radius: 12px; padding: 3px 10px 3px 4px; } .hand b { width: 26px; height: 26px; border-radius: 8px; background: var(--wash); display: grid; place-items: center; color: var(--ink); } .hand .on { border-color: var(--c); color: var(--k); background: var(--soft); } .hand .on b { background: var(--c); color: #fff; }
+.gl1 { display: grid; gap: 8px; font-size: 15px; font-weight: 600; }
 
 /* resultado */
 .res { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 22px; align-items: center; }
@@ -206,7 +218,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   .drawer.resd > div { flex-wrap: wrap; gap: 12px; }
   .drawer.resd > div > .btn, .drawer.resd .row { flex: 1 1 100%; }
   .drawer .row > .btn { flex: 1 1 0; min-width: 0; padding-inline: 10px; }
-  .mascot { width: 84px; }
+  .mascot { width: 92px; }
   h1 { font-size: 24px; }
 }
 @media (max-height: 560px) and (orientation: landscape) { .ttl, .playing .live { display: none; } .top { padding-top: 6px; padding-bottom: 2px; } .drawer { padding-block: 6px; } .drawer > div { min-height: 44px; } .body { padding-bottom: 6px; } }
@@ -530,25 +542,135 @@ const DSP = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = DSP;
 
+/* ===== Compositores que tocaram estes instrumentos ===== */
+const COMPOSERS = {
+  vivaldi:    { name: 'Vivaldi', inst: 'violin', years: '1678–1741', say: 'Ciao, eu sou Vivaldi!', fact: 'Antonio Vivaldi era um violinista brilhante e professor de violino em Veneza. Pelo cabelo ruivo e por ser sacerdote, ganhou o apelido de “padre ruivo”. É dele “As Quatro Estações”.' },
+  paganini:   { name: 'Paganini', inst: 'violin', years: '1782–1840', say: 'Eu sou Paganini!', fact: 'Niccolò Paganini foi o violinista mais famoso do seu tempo. Tocava tão bem que corriam lendas sobre ele. Escreveu os 24 Caprichos para violino solo.' },
+  dvorak:     { name: 'Dvořák', inst: 'viola', years: '1841–1904', say: 'Ahoj, eu sou Dvořák!', fact: 'Antonín Dvořák ganhou a vida como violista de orquestra em Praga por cerca de dez anos, antes de ficar famoso com a Sinfonia “Do Novo Mundo”.' },
+  mozart:     { name: 'Mozart', inst: 'viola', years: '1756–1791', say: 'Eu sou Mozart!', fact: 'Mozart tocava piano e violino, mas em quartetos gostava de ficar com a viola. Ele tocou música de câmara com Haydn em Viena.' },
+  villa:      { name: 'Villa-Lobos', inst: 'cello', years: '1887–1959', say: 'Oi, eu sou Villa-Lobos!', fact: 'Heitor Villa-Lobos aprendeu violoncelo com o pai e tocou em teatros e cinemas do Rio de Janeiro. A Bachianas Brasileiras nº 1 é para um conjunto só de violoncelos.' },
+  boccherini: { name: 'Boccherini', inst: 'cello', years: '1743–1805', say: 'Eu sou Boccherini!', fact: 'Luigi Boccherini era virtuose do violoncelo e filho de contrabaixista. Escreveu muitos quintetos com dois violoncelos.' },
+  bottesini:  { name: 'Bottesini', inst: 'bass', years: '1821–1889', say: 'Ciao, eu sou Bottesini!', fact: 'Giovanni Bottesini era chamado de “o Paganini do contrabaixo”. Também foi regente e dirigiu a estreia da ópera “Aida”, no Cairo.' },
+  dragonetti: { name: 'Dragonetti', inst: 'bass', years: '1763–1846', say: 'Eu sou Dragonetti!', fact: 'Domenico Dragonetti, de Veneza, impressionou Haydn e Beethoven com o contrabaixo e tocou em Londres por mais de cinquenta anos.' },
+};
+const PAIR = { violin: ['vivaldi', 'paganini'], viola: ['dvorak', 'mozart'], cello: ['villa', 'boccherini'], bass: ['bottesini', 'dragonetti'] };
+
+/* corpo do instrumento em 40×66, voluta no alto */
+const fiddleG = (id, col, dark) => {
+  const slope = id === 'bass', pin = id === 'cello' || id === 'bass';
+  return `${pin ? `<path d="M20 58v8" stroke="${dark}" stroke-width="2.200" stroke-linecap="round"/>` : ''}
+  <path d="${slope ? 'M20 22c-3 3-9 4-9 10 0 4 2 5 2 8s-5 4-5 11c0 6 5 9 12 9s12-3 12-9c0-7-5-8-5-11s2-4 2-8c0-6-6-7-9-10z' : 'M20 25c-5-1-10 1-10 7 0 4 3 5 3 8s-5 4-5 11c0 6 5 9 12 9s12-3 12-9c0-7-5-8-5-11s3-4 3-8c0-6-5-8-10-7z'}" fill="${col}"/>
+  <path d="M15 40c-2 1-2 5 0 7M25 40c2 1 2 5 0 7" stroke="${dark}" stroke-width="1.800" fill="none" stroke-linecap="round"/>
+  <path d="M18.300 8h3.400v33h-3.400z" fill="${dark}"/><path d="M17.500 47h5l-1 9h-3z" fill="${dark}"/>
+  <path d="M20 1.500a3.600 3.600 0 1 1-2.600 6" stroke="${dark}" stroke-width="2.600" fill="none" stroke-linecap="round"/>
+  <path d="M15 8.500h10M15 12.500h10" stroke="${dark}" stroke-width="2" stroke-linecap="round"/>`;
+};
+
+function composer(who, mood = 'happy', headOnly = false) {
+  const C = COMPOSERS[who], I = INST[C.inst], ink = '#3a2c33', wood = '#b5652b', woodD = '#6f3717';
+  const skin = { vivaldi: '#fbd5b8', paganini: '#f6dcc6', dvorak: '#f2c6a2', mozart: '#fcd9c0', villa: '#e5b48c', boccherini: '#f7cfae', bottesini: '#efc29c', dragonetti: '#f5ceb0' }[who], shade = '#00000018';
+  const E = (x, y, rx, ry, f) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry ?? rx}" fill="${f}"/>`, P = (d, f, s = '', w = 0) => `<path d="${d}" fill="${f}"${s ? ` stroke="${s}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"` : ''}/>`;
+  const curls = (pts, r, f) => pts.map(p => E(p[0], p[1], p[2] || r, p[2] || r, f)).join('');
+  // coordenadas: quadro 130×136, rosto centrado em (62,56)
+  let back = '', coat = '', face = '', front = '', brow = ink, lip = '#a8483f';
+  const jabot = (c = '#fff') => P('M50 92q12 8 24 0l-3 13q5 4-1 8 3 5-8 12-11-7-8-12-6-4-1-8z', c) + P('M54 105q8 5 16 0M55 114q7 4 14 0', 'none', '#cfc6d6', 2);
+  const body = (c, dk) => P('M14 137c0-27 14-38 34-41h28c20 3 34 14 34 41z', c) + P('M46 97L62 137 78 97', dk) ;
+  const roll = c => [[30, 50], [30, 60], [30, 70]].map(p => E(p[0], p[1], 9, 5.5, c) + E(p[0], p[1], 5, 2, '#0000000f')).join('') + [[94, 50], [94, 60], [94, 70]].map(p => E(p[0], p[1], 9, 5.5, c) + E(p[0], p[1], 5, 2, '#0000000f')).join('');
+  if (who === 'vivaldi') {
+    const h = '#c8521f', l = '#df6d33';
+    back = curls([[32, 40], [28, 52], [26, 65], [27, 78], [30, 90], [38, 97], [92, 40], [96, 52], [98, 65], [97, 78], [94, 90], [86, 97], [34, 72, 14], [90, 72, 14]], 11, h);
+    coat = body('#a6312f', '#7f2222') + P('M47 95l15 12 15-12 5 14-12 6-8-8-8 8-12-6z', '#fff');
+    front = P('M33 52c-2-24 12-35 29-35s31 11 29 35c-4-12-12-19-20-21-4 5-10 5-16 3-9 2-18 8-22 18z', h) + curls([[36, 38], [44, 27], [56, 21], [68, 21], [80, 27], [88, 38]], 8, l); brow = '#8a3512';
+  } else if (who === 'paganini') {
+    const h = '#25202b';
+    back = P('M28 50c-6 16-5 36 2 48 7-1 10-6 11-12h42c1 6 4 11 11 12 7-12 8-32 2-48z', h) + curls([[29, 92, 8], [95, 92, 8], [25, 78, 8], [99, 78, 8]], 8, h);
+    coat = body('#2c2735', '#191520') + P('M48 93q14 8 28 0l2 14q-16 8-32 0z', '#fff') + P('M62 106l-9 7 3 5 6-5 6 5 3-5z', '#fff', '#d9d2e0', 1.5);
+    front = P('M32 56c-4-27 10-41 30-41s34 14 30 41c-3-14-9-22-17-25-5-3-9-4-12-8-4 8-21 12-31 33z', h) + P('M34 54c-1 10 1 18 5 22l3-10-3-12zM90 54c1 10-1 18-5 22l-3-10 3-12z', h);
+    face = P('M60 54c-1 8-5 12-3 15 2 2 6 2 8 0', 'none', '#c99b7d', 3);
+  } else if (who === 'dvorak') {
+    const h = '#3d2e2a', l = '#54413a';
+    back = E(62, 47, 31, 28, h) + P('M33 46c-3 8-2 20 2 28h54c4-8 5-20 2-28z', h);
+    coat = body('#4a4560', '#fff') + P('M62 100l-7-5-3 8 10 4 10-4-3-8zM60 106h4l4 22-6 8-6-8z', '#8b2a3a');
+    front = P('M33 54c-3-18 4-30 13-33-5 8-7 18-13 33zM91 54c3-18-4-30-13-33 5 8 7 18 13 33z', h) + P('M41 25c9-8 33-8 42 0-9-3-33-3-42 0z', h);
+    face = P('M33 62c0 24 12 42 29 42s29-18 29-42c-5 6-10 8-13 8-5-5-11-6-16-6s-11 1-16 6c-3 0-8-2-13-8z', h) + P('M62 69c-8-5-19-2-23 6 8 4 18 3 23-1 5 4 15 5 23 1-4-8-15-11-23-6z', l); brow = h; lip = '#d88a7e';
+  } else if (who === 'mozart') {
+    const w = '#f1eef4', s = '#d6d0de';
+    back = E(62, 44, 35, 30, s) + P('M50 90c-2 10 2 18 12 18s14-8 12-18z', s) + roll(w) + P('M44 88l-14 5 4 7 12-6zM80 88l14 5-4 7-12-6z', '#2e2838');
+    coat = body('#c9343c', '#e9b93c') + P('M22 120q10-14 24-20M102 120q-10-14-24-20', 'none', '#e9b93c', 3) + jabot();
+    front = P('M33 48c-2-24 12-34 29-34s31 10 29 34c-5-13-14-19-29-19s-24 6-29 19z', w) + P('M44 24q18-9 36 0M40 32q22-10 44 0', 'none', s, 2.5); brow = '#8d7f78';
+  } else if (who === 'villa') {
+    const h = '#4b4650', l = '#6b6672';
+    back = P('M32 44c-4 10-3 22 0 28h60c3-6 4-18 0-28z', h);
+    coat = body('#3f5d52', '#fff') + P('M62 105l-15-8v15zM62 105l15-8v15z', '#1e8f5a') + E(62, 105, 4, 4, '#f2c230');
+    front = P('M32 52c-5-24 10-38 31-38 20 0 34 14 29 38-2-8-4-13-7-17-15 3-34 2-44-3-4 5-7 12-9 20z', h) + P('M44 27c12-8 30-9 42 1M42 33c13 5 30 6 42 1', 'none', l, 2.5); brow = '#3a353f';
+    face = P('M44 72q-3 4-2 8M80 72q3 4 2 8', 'none', '#b98560', 2);
+  } else if (who === 'boccherini') {
+    const w = '#e6dccf', s = '#c8baa9';
+    back = E(62, 46, 34, 30, s) + roll(w) + P('M50 92c-2 10 2 14 12 14s14-4 12-14z', s);
+    coat = body('#2d5fa8', '#f0e2b8') + P('M22 122q10-15 24-21M102 122q-10-15-24-21', 'none', '#e9c14a', 3) + curls([[46, 124], [78, 124]], 3, '#e9c14a') + jabot('#fffaf0');
+    front = P('M33 50c-3-28 14-38 29-38s32 10 29 38c-3-10-7-15-11-17-8 4-12-3-18-3s-10 7-18 3c-4 2-8 7-11 17z', w) + P('M40 27q22-12 44 0', 'none', s, 2.5); brow = '#6e5a49';
+  } else if (who === 'bottesini') {
+    const h = '#5a3a22', l = '#714b2e';
+    back = P('M31 42c-5 12-4 28 2 36h58c6-8 7-24 2-36z', h) + curls([[32, 74, 8], [92, 74, 8]], 8, h);
+    coat = body('#2f3440', '#fff') + P('M62 104l-13-7 1 13zM62 104l13-7-1 13z', '#23262f') + P('M30 108q8-9 18-11M94 108q-8-9-18-11', 'none', '#4b5160', 3);
+    front = P('M32 54c-5-26 9-40 32-40 20 0 32 14 28 40-3-8-5-14-10-18-12 2-26-1-34-8-4 8-13 14-16 26z', h) + P('M50 25c10-7 26-6 34 3M52 30c10 5 22 7 32 5', 'none', l, 2.5);
+    face = P('M62 70c-6-5-15-2-18 2-3 4-9 4-11 1 2 9 14 11 22 7 3-1 5-3 7-5 2 2 4 4 7 5 8 4 20 2 22-7-2 3-8 3-11-1-3-4-12-7-18-2z', h) + P('M56 87q6 2 12 0l-2 11q-4 4-8 0z', h); brow = h;
+  } else {
+    const h = '#b9b4bd', l = '#d3ced8';
+    back = curls([[30, 46, 11], [28, 60, 10], [31, 72, 9], [94, 46, 11], [96, 60, 10], [93, 72, 9]], 10, h);
+    coat = body('#6a4a36', '#4b3223') + P('M44 92l4 16 14-6 14 6 4-16-18 5z', '#fff') + P('M50 99q12 7 24 0l-4 12-8-5-8 5z', '#211c26');
+    front = P('M33 52c-4-20 8-34 28-35-4 6-2 9 4 10-12 1-25 8-32 25z', h) + P('M91 52c4-20-8-34-24-35 4 3 4 7 0 9 11 2 18 10 24 26z', h) + curls([[40, 32, 8], [50, 23, 8], [63, 19, 7], [76, 23, 8], [86, 33, 8]], 8, l); brow = '#8f8a95';
+    face = P('M42 76q-3 3-2 7M82 76q3 3 2 7', 'none', '#cf9f80', 2);
+  }
+  const beard = who === 'dvorak', must = who === 'bottesini' || beard, my = beard ? 82 : must ? 83 : 78;
+  const mouth = mood === 'wow' ? E(62, my + 1, 6.5, beard ? 5 : 6, '#7d2a31') + E(62, my + 4, 4, 2, '#e07a76') : mood === 'sad' ? P(`M54 ${my + 4}q8-7 16 0`, 'none', lip, 3.2) : P(`M52 ${my - 2}q10 ${mood === 'play' ? 6 : 10} 20 0`, 'none', lip, 3.2);
+  const eye = (x) => mood === 'play' ? P(`M${x - 6} 59q6-6 12 0`, 'none', ink, 3.4) : E(x, 57, 5, 6, ink) + E(x + 1.800, 54.800, 1.800, 2, '#fff');
+  const by = mood === 'sad' ? ['M42 49q6-5 13-2', 'M69 47q7-3 13 2'] : mood === 'wow' ? ['M42 43q6-5 13-2', 'M69 41q7-3 13 2'] : ['M42 47q6-4 13-1', 'M69 46q7-3 13 1'];
+  const head = back + E(33, 62, 5, 7, skin) + E(91, 62, 5, 7, skin) + P('M53 84h18v14q-9 6-18 0z', skin) + P('M53 88q9 7 18 0v6q-9 6-18 0z', shade) + P(`M34 54c0-22 12-32 28-32s28 10 28 32c0 ${who === 'paganini' ? '24-14 38-28 38' : '22-12 36-28 36'}S34 ${who === 'paganini' ? '78' : '76'} 34 54z`, skin) + E(44, 70, 6, 4, '#ee8d7a66') + E(80, 70, 6, 4, '#ee8d7a66')
+    + face + front + eye(49) + eye(75) + by.map(d => P(d, 'none', brow, 3.4)).join('') + (who === 'paganini' ? '' : P('M60 63q-3 6 2 7', 'none', '#00000030', 2.600)) + mouth;
+  if (headOnly) return `<svg viewBox="16 6 92 104" aria-hidden="true">${coat}${head}</svg>`;
+  const big = C.inst === 'cello' || C.inst === 'bass';
+  const hand = (x, y) => E(x, y, 8, 7.5, skin);
+  const inst = big
+    ? `<g transform="translate(${C.inst === 'bass' ? 84 : 88} ${C.inst === 'bass' ? 18 : 40}) scale(${C.inst === 'bass' ? 1.12 : .96} ${C.inst === 'bass' ? 1.75 : 1.42})">${fiddleG(C.inst, I.c, I.k)}</g>` + `<path d="M78 122l50-8" stroke="${woodD}" stroke-width="3.500" stroke-linecap="round"/>` + hand(107, C.inst === 'bass' ? 52 : 72) + hand(80, 121)
+    : `<g transform="translate(58 136) rotate(64) scale(1.02) translate(-20 -52)">${fiddleG(C.inst, I.c, I.k)}</g>` + `<path d="M52 132L92 92" stroke="${woodD}" stroke-width="3.500" stroke-linecap="round"/>` + hand(107, 113) + hand(50, 131);
+  return `<svg viewBox="0 0 136 140" aria-hidden="true">${coat}${head}${inst}</svg>`;
+}
+const hero = (mood, second) => composer(PAIR[S.inst][second ? 1 : 0], mood);
+
 /* ===== Motor de áudio: contexto, microfone, relógio e calibração ===== */
 const AE = (() => {
-  let ctx, master, micNode, stream, samples = {}, clicks, listeners = new Set(), live = [], decoding, chirp;
+  let ctx, master, noteBus, drive, meter, silent, micNode, stream, samples = {}, clicks, listeners = new Set(), live = [], decoding, chirp;
   const secure = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   async function ensureCtx() {
     if (!ctx) {
-      try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch (e) { }
+      session('playback'); unlock();
       ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
       master = ctx.createGain();
       master.connect(ctx.destination);
-      clicks = [makeClick(4100, 1), makeClick(3200, .8)];
+      // instrumento: ganho → saturação suave (cria harmônicos que alto-falante pequeno consegue tocar) → liga/desliga
+      drive = ctx.createGain(); const sh = ctx.createWaveShaper(), cv = new Float32Array(2049);
+      for (let i = 0; i < 2049; i++) cv[i] = Math.tanh((i / 1024 - 1) * 2) * .92; sh.curve = cv;
+      const pre = ctx.createGain(); pre.gain.value = .5; noteBus = ctx.createGain(); noteBus.gain.value = 1;
+      drive.connect(pre); pre.connect(sh); sh.connect(noteBus); noteBus.connect(master);
+      meter = ctx.createAnalyser(); meter.fftSize = 512; master.connect(meter);
+      clicks = { hi: [makeClick(4100, 1), makeClick(3200, .85)], wood: [makeWood(1480, 1), makeWood(1050, .85)] };
       chirp = makeChirp();
       decoding = Promise.all(Object.keys(SAMPLES).map(async k => {
         const bin = atob(SAMPLES[k]), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
         samples[k] = trim(await new Promise((ok, no) => { const p = ctx.decodeAudioData(u.buffer, ok, no); if (p && p.then) p.then(ok, no); }));
       }));
     }
-    if (ctx.state !== 'running') await ctx.resume();
+    if (ctx.state !== 'running') await Promise.race([ctx.resume(), sleep(1500)]);
     await decoding; return ctx;
+  }
+  function session(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) { } }
+  /* iPhone antigo: um <audio> mudo em laço faz o Web Audio ignorar a chave de silencioso */
+  function unlock() {
+    if (silent || !/iP(hone|ad|od)/.test(navigator.userAgent)) return;
+    const n = 4410, u = new Uint8Array(44 + n), v = new DataView(u.buffer), w = (o, s) => [...s].forEach((c, i) => u[o + i] = c.charCodeAt(0));
+    w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 44100, true); v.setUint32(28, 44100, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true); u.fill(128, 44);
+    silent = new Audio(URL.createObjectURL(new Blob([u], { type: 'audio/wav' }))); silent.loop = true; silent.setAttribute('playsinline', ''); const p = silent.play(); p && p.catch(() => { silent = null; });
   }
   /* corta o silêncio que o MP3 põe no começo e mede onde o ataque é percebido */
   function trim(buf) {
@@ -562,7 +684,13 @@ const AE = (() => {
   /* pulso agudo (acima de 3 kHz): audível, mas fora da faixa que o detector analisa */
   function makeClick(f, amp) {
     const n = Math.round(ctx.sampleRate * .06), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) { const t = i / ctx.sampleRate; d[i] = amp * Math.min(1, t / .0015) * Math.exp(-t / .011) * (.75 * Math.sin(6.283185 * f * t) + .25 * Math.sin(6.283185 * f * 1.5 * t)); }
+    for (let i = 0; i < n; i++) { const t = i / ctx.sampleRate; d[i] = amp * Math.min(1, t / .0015) * Math.exp(-t / .015) * (.75 * Math.sin(6.283185 * f * t) + .25 * Math.sin(6.283185 * f * 1.5 * t)); }
+    return b;
+  }
+  /* pulso de madeira: mais cheio, usado quando o microfone não está ouvindo o alto-falante */
+  function makeWood(f, amp) {
+    const n = Math.round(ctx.sampleRate * .12), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) { const t = i / ctx.sampleRate; d[i] = amp * Math.min(1, t / .001) * (.7 * Math.exp(-t / .022) * Math.sin(6.283185 * f * t) + .3 * Math.exp(-t / .009) * Math.sin(6.283185 * f * 2.43 * t)); }
     return b;
   }
   function makeChirp() {
@@ -572,19 +700,20 @@ const AE = (() => {
   }
   function play(buf, at, gain, o = {}) {
     const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.playbackRate.value = o.rate || 1;
-    s.connect(g); g.connect(master);
+    s.connect(g); g.connect(o.bus || master);
     if (o.dur) { g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(gain, at + .008); g.gain.setValueAtTime(gain, Math.max(at + .01, at + o.dur - .07)); g.gain.linearRampToValueAtTime(0, at + o.dur); s.start(at, o.off || 0); s.stop(at + o.dur + .02); }
     else { g.gain.value = gain; s.start(at); }
     live.push(s); s.onended = () => { const i = live.indexOf(s); if (i >= 0) live.splice(i, 1); }; return s;
   }
-  function click(at, accent, vol) { play(clicks[accent ? 0 : 1], at, vol); }
+  function click(at, accent, vol, wood) { play(clicks[wood ? 'wood' : 'hi'][accent ? 0 : 1], at, vol); }
+  const DRIVE = { violin: 1.9, viola: 1.8, cello: 2.6, bass: 3.6 };
   function tone(inst, s, at, dur, vol, a4) {
     const q = samples[inst + '_' + s]; if (!q) return;
-    play(q.buf, Math.max(ctx.currentTime, at - q.atk * .4), vol, { dur, off: q.off, rate: a4 / 440 });
+    drive.gain.value = DRIVE[inst]; play(q.buf, Math.max(ctx.currentTime, at - q.atk * .4), vol, { dur, off: q.off, rate: a4 / 440, bus: drive });
   }
   function ref(inst, midi, a4) { // tom de referência do afinador, a partir da amostra mais próxima
     const I = INST[inst], s = Math.abs(I.midi.D - midi) <= Math.abs(I.midi.A - midi) ? 'D' : 'A', q = samples[inst + '_' + s], rate = Math.pow(2, (midi - I.midi[s]) / 12) * a4 / 440;
-    play(q.buf, ctx.currentTime + .02, .8, { dur: Math.min(2.6, 3.4 / rate), off: q.off, rate });
+    noteBus.gain.value = 1; drive.gain.value = DRIVE[inst]; play(q.buf, ctx.currentTime + .02, .8, { bus: drive, dur: Math.min(2.6, 3.4 / rate), off: q.off, rate });
   }
   function stopAll() { live.slice().forEach(s => { try { s.stop(); } catch (e) { } }); live.length = 0; }
 
@@ -596,7 +725,9 @@ const AE = (() => {
     await ensureCtx();
     if (stream && stream.getAudioTracks()[0].readyState === 'live' && micNode) return;
     if (!secure()) throw Object.assign(Error('insecure'), { code: 'insecure' });
+    session('play-and-record');
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1, latency: { ideal: 0 } } });
+    if (ctx.state !== 'running') await Promise.race([ctx.resume(), sleep(1500)]); // abrir o microfone pode pausar o áudio no iPhone
     if (micNode) { try { micNode.disconnect(); } catch (e) { } }
     const src = ctx.createMediaStreamSource(stream), mute = ctx.createGain(); mute.gain.value = 0; mute.connect(ctx.destination);
     const emit = (b, t) => listeners.forEach(f => f(b, t));
@@ -647,8 +778,11 @@ const AE = (() => {
     return { ok: true, rtl: DSP.median(good), spread: Math.max(...good) - Math.min(...good), n: good.length };
   }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  function dropMic() { if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; if (micNode) { try { micNode._src && micNode._src.disconnect(); micNode.disconnect(); } catch (e) { } } micNode = null; }
-  const api = { ensureCtx, ensureMic, onMic, click, tone, ref, stopAll, heard, guessRtl, autoCal, dropMic, secure, get ctx() { return ctx; }, get hasMic() { return !!(stream && micNode); } };
+  function dropMic() { if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; if (micNode) { try { micNode._src && micNode._src.disconnect(); micNode.disconnect(); } catch (e) { } } micNode = null; session('playback'); }
+  const notesOn = on => { if (noteBus) noteBus.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, .015); };
+  const mb = new Float32Array(512); const level = () => { if (!meter) return 0; meter.getFloatTimeDomainData(mb); let p = 0; for (const v of mb) p = Math.max(p, Math.abs(v)); return p; };
+  for (const t of ['pointerdown', 'keydown']) addEventListener(t, () => { if (ctx && ctx.state !== 'running') ctx.resume().catch(() => { }); }, true);
+  const api = { ensureCtx, ensureMic, onMic, click, tone, ref, stopAll, notesOn, level, heard, guessRtl, autoCal, dropMic, secure, get ctx() { return ctx; }, get hasMic() { return !!(stream && micNode); } };
   return api;
 })();
 
@@ -674,9 +808,13 @@ const Score = (() => {
     const up = pos < 4, sx = up ? x + w / 2 - sp * .06 : x - w / 2 + sp * .06;
     g.fillStyle = color; g.fillRect(sx - sp * .07, up ? y - sp * 3.5 : y + sp * .1, sp * .14, sp * 3.4);
   }
-  function bow(g, n, x, yb, sp, pos) {
+  const topOf = (pos, yb, sp) => Math.min(yb - 4 * sp, yOf(pos, yb, sp) - (pos < 4 ? 3.5 * sp : .5 * sp));
+  function finger(g, x, yb, sp, pos, color) { // 0 = corda solta
+    g.fillStyle = color; g.font = `900 ${sp * 1.3}px Nunito`; g.textAlign = 'center'; g.fillText('0', x, topOf(pos, yb, sp) - sp * .55);
+  }
+  function bow(g, n, x, yb, sp, pos, fing) {
     if (!n.bow) return;
-    const top = Math.min(yb - 4 * sp, yOf(pos, yb, sp) - (pos < 4 ? 3.5 * sp : .5 * sp)) - sp * .75;
+    const top = topOf(pos, yb, sp) - sp * (fing ? 1.95 : .75);
     glyph(g, n.bow === 'n' ? 'dn' : 'up', x, top, sp * .92, COL.ink, true);
   }
   function star(g, x, yb, sp, pos, color) {
@@ -711,9 +849,9 @@ const Score = (() => {
     const w = cv.parentElement.clientWidth; if (!w) return;
     const sp = w < 560 ? 8.5 : 10, head = sp * 7.4, pad = 16;
     const per = Math.max(1, Math.min(L.bars, w < 480 ? 2 : w < 900 ? 4 : 4)), n = Math.ceil(L.bars / per);
-    const rowH = sp * (opt.res ? 12.6 : 11.4), h = n * rowH + sp * 1.2, g = setup(cv, w, h), I = INST[inst];
+    const fx = opt.fing ? 1.4 : 0, rowH = sp * ((opt.res ? 12.6 : 11.4) + fx), h = n * rowH + sp * 1.2, g = setup(cv, w, h), I = INST[inst];
     for (let r = 0; r < n; r++) {
-      const yb = r * rowH + sp * 8, x0 = pad, x1 = w - pad, bx = x0 + (r ? sp * 4.4 : head) + sp * .6, ppb = (x1 - bx - sp * .6) / (per * 4);
+      const yb = r * rowH + sp * (8 + fx), x0 = pad, x1 = w - pad, bx = x0 + (r ? sp * 4.4 : head) + sp * .6, ppb = (x1 - bx - sp * .6) / (per * 4);
       staff(g, x0, x1, yb, sp); clef(g, inst, x0 + sp * .5, yb, sp); if (!r) timesig(g, x0 + sp * 4.6, yb, sp);
       const X = b => bx + (b - r * per * 4) * ppb + sp * 1.1, b0 = r * per * 4, b1 = Math.min(L.beats, b0 + per * 4);
       for (let b = b0 + 4; b <= b1; b += 4) if (b < L.beats && b < b1) barline(g, X(b) - sp * 1.9, yb, sp); else if (b >= L.beats) repeatEnd(g, x1, yb, sp); else barline(g, x1, yb, sp);
@@ -722,7 +860,7 @@ const Score = (() => {
       L.notes.forEach((q, i) => {
         if (q.b < b0 || q.b >= b1) return; const x = X(q.b), pos = I.pos[q.s], rs = opt.res ? [opt.res[i], opt.res[i + L.notes.length]].filter(Boolean) : [];
         const worst = rs.length ? rs.reduce((a, c) => c.pts < a.pts ? c : a) : null;
-        note(g, q, x, yb, sp, pos, worst ? COL[kind(worst.v)] : COL.ink); bow(g, q, x, yb, sp, pos);
+        note(g, q, x, yb, sp, pos, worst ? COL[kind(worst.v)] : COL.ink); bow(g, q, x, yb, sp, pos, opt.fing); if (opt.fing) finger(g, x, yb, sp, pos, I.k);
         rs.forEach((z, j) => mark(g, z, x, yb + sp * 3.1 + j * sp * 1.45, sp));
         if (opt.names) { g.fillStyle = I.k; g.font = `800 ${sp * 1.25}px Nunito`; g.textAlign = 'center'; g.fillText(NOTE_PT[q.s], x, yb + sp * 3.2); }
       });
@@ -730,18 +868,18 @@ const Score = (() => {
   }
   /* Vista rolante */
   function scroll(cv, st) {
-    const w = cv.parentElement.clientWidth, narrow = w < 560, short = innerHeight < 560, sp = short ? 11 : narrow ? 11 : w > 900 ? 19 : 15, h = sp * 16, g = setup(cv, w, h), I = INST[st.inst];
-    const yb = sp * 9.6, ph = Math.max(sp * 10.4, w * (narrow ? .52 : .44)), ppb = narrow ? 64 : Math.min(142, Math.max(84, w / 8));
+    const w = cv.parentElement.clientWidth, narrow = w < 560, short = innerHeight < 560, sp = short ? 11 : narrow ? 11 : w > 900 ? 19 : 15, h = sp * 17.2, g = setup(cv, w, h), I = INST[st.inst];
+    const yb = sp * 10.8, ph = Math.max(sp * 10.4, w * (narrow ? .52 : .44)), ppb = narrow ? 64 : Math.min(142, Math.max(84, w / 8));
     const X = b => ph + (b - st.beat) * ppb, L = st.L, total = st.total, bMin = st.beat - ph / ppb - 1, bMax = st.beat + (w - ph) / ppb + 1;
     // faixa do compasso atual
     const cb = Math.floor(st.beat / 4) * 4;
-    if (st.beat >= 0 && st.beat < total) { g.fillStyle = I.soft; g.fillRect(X(cb) - ppb * .32, yb - sp * 8.6, ppb * 4, sp * 14.6); }
+    if (st.beat >= 0 && st.beat < total) { g.fillStyle = I.soft; g.fillRect(X(cb) - ppb * .32, yb - sp * 9.8, ppb * 4, sp * 15.8); }
     for (let b = Math.ceil(bMin); b <= bMax; b++) if (b >= -4 && b < total) { g.fillStyle = '#e6e2ee'; g.fillRect(X(b) - 1, yb + sp * 4.7, 2, sp * .7); g.fillStyle = '#8d86a0'; g.font = `800 ${sp * .95}px Nunito`; g.textAlign = 'center'; g.fillText(((b % 4) + 4) % 4 + 1, X(b), yb + sp * 6); }
     staff(g, 0, w, yb, sp);
     for (let p = 0; p < st.passes; p++) {
       const o = p * L.beats;
       for (let b = 4; b <= L.beats; b += 4) { const x = X(o + b) - ppb * .32; if (x < -20 || x > w + 20) continue; if (b === L.beats && (p === 0 || p === st.passes - 1)) repeatEnd(g, x, yb, sp); else barline(g, x, yb, sp); }
-      if (st.passes > 1 && p === 1) { g.fillStyle = I.k; g.font = `800 ${sp}px Nunito`; g.textAlign = 'left'; g.fillText('2ª vez', X(o) - ppb * .2, yb - sp * 8); }
+      if (st.passes > 1 && p === 1) { g.fillStyle = I.k; g.font = `800 ${sp}px Nunito`; g.textAlign = 'left'; g.fillText('2ª vez', X(o) - ppb * .2, yb - sp * 9); }
       L.rests.forEach(q => { const x = X(o + q.b + 2) - ppb * .32; if (x > -40 && x < w + 40) rest(g, x, yb, sp); });
       L.stars.forEach(b => { const x = X(o + b) - ppb * .32; if (x > 0 && x < w) star(g, x, yb, sp, 0, I.c); });
       L.notes.forEach((q, i) => {
@@ -750,9 +888,9 @@ const Score = (() => {
         const c = r ? COL[kind(r.v)] : COL.ink, live = !r && st.beat >= b && st.beat < b + q.d;
         g.fillStyle = r ? { ok: '#bfeab9', warn: '#ffe08a', bad: '#ffc3c5' }[kind(r.v)] : live ? I.c + '55' : I.c + '26';
         g.beginPath(); g.roundRect(x - sp * .5, y - sp * .5, Math.max(sp, x2 - x + sp * .5), sp, sp * .5); g.fill();
-        note(g, q, x, yb, sp, pos, c); bow(g, q, x, yb, sp, pos);
-        if (st.names) { g.fillStyle = I.k; g.font = `800 ${sp * 1.15}px Nunito`; g.textAlign = 'center'; g.fillText(NOTE_PT[q.s], x, yb + sp * 3.9); }
-        if (r) mark(g, r, x, yb - sp * 7.6, sp * 1.15);
+        note(g, q, x, yb, sp, pos, c); bow(g, q, x, yb, sp, pos, st.fing); if (st.fing) finger(g, x, yb, sp, pos, I.k);
+        if (st.names) { g.fillStyle = I.k; g.font = `800 ${sp * 1.15}px Nunito`; g.textAlign = 'center'; g.fillText(NOTE_PT[q.s], x, yb + sp * 4.3); }
+        if (r) mark(g, r, x, yb + sp * 2.45, sp * 1.1);
       });
     }
     // rastro do que o microfone ouviu
@@ -761,10 +899,10 @@ const Score = (() => {
       g.fillStyle = q.q === 2 ? '#43ad3c' : q.q === 1 ? '#f2a900' : '#e8484f'; g.beginPath(); g.arc(x, yOf(I.pos[q.s], yb, sp) - Math.max(-1.3, Math.min(1.3, q.c / 50)) * sp, sp * .2, 0, 7); g.fill();
     }
     // linha de leitura + bolinha do pulso
-    const fr = ((st.beat % 1) + 1) % 1, down = (((Math.floor(st.beat) % 4) + 4) % 4) === 0, by = yb - sp * 8.7;
-    g.fillStyle = I.c; g.fillRect(ph - 1.5, yb - sp * 8.2, 3, sp * 14.6);
+    const fr = ((st.beat % 1) + 1) % 1, down = (((Math.floor(st.beat) % 4) + 4) % 4) === 0, by = yb - sp * 9.8;
+    g.fillStyle = I.c; g.fillRect(ph - 1.5, yb - sp * 9.4, 3, sp * 15.8);
     const hit = st.run ? Math.max(0, 1 - fr * 3.2) : 0, rr = sp * (.55 + hit * (down ? .6 : .35));
-    if (hit) { g.globalAlpha = hit * .28; g.fillRect(ph - sp * .9, yb - sp * 8.2, sp * 1.8, sp * 14.6); g.globalAlpha = 1; }
+    if (hit) { g.globalAlpha = hit * .28; g.fillRect(ph - sp * .9, yb - sp * 9.4, sp * 1.8, sp * 15.8); g.globalAlpha = 1; }
     g.beginPath(); g.arc(ph, by, rr, 0, 7); g.fill();
     // clave fixa
     const mw = sp * 7.8, gr = g.createLinearGradient(mw, 0, mw + sp * 1.6, 0); gr.addColorStop(0, '#fff'); gr.addColorStop(1, 'rgba(255,255,255,0)');
@@ -785,7 +923,7 @@ const Score = (() => {
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const KEY = 'cordas-soltas-v1';
-const S = Object.assign({ inst: 'viola', first: true, prog: {}, xp: 0, streak: 0, last: '', rtl: { spk: null, ph: null }, vis: 0, level: 'easy', a4: 440, vNote: .8, vClick: .7, names: false, phones: false, repeat: false, mode: 'listen', bpm: {} }, (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })());
+const S = Object.assign({ inst: 'viola', first: true, prog: {}, xp: 0, streak: 0, last: '', rtl: { spk: null, ph: null }, vis: 0, level: 'easy', a4: 440, vNote: .8, vClick: .7, names: false, fing: true, phones: false, repeat: false, mode: 'listen', bpm: {} }, (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })());
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
 const prog = () => S.prog[S.inst] || (S.prog[S.inst] = {});
 const rtlKey = () => S.phones ? 'ph' : 'spk';
@@ -805,42 +943,25 @@ const ICON = {
 const STAR = on => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.800l3.100 6.500 7.100.9-5.200 4.900 1.300 7.100L12 17.800l-6.300 3.400L7 14.100 1.800 9.200l7.100-.9z" fill="${on ? '#ffc21a' : '#e6e2ee'}" stroke="${on ? '#d99a00' : '#d5d0e0'}" stroke-width="1.200" stroke-linejoin="round"/></svg>`;
 const stars = n => [0, 1, 2].map(i => STAR(i < n)).join('');
 const fiddle = (id, col, dark) => {
-  const k = { violin: .7, viola: .78, cello: .88, bass: .92 }[id], slope = id === 'bass', pin = id === 'cello' || id === 'bass';
-  return `<svg viewBox="0 0 40 60" aria-hidden="true"><g transform="translate(20 ${58 - (pin ? 5 : 1)}) scale(${k * 1.02}) translate(-20 -62)">
-  ${pin ? `<path d="M20 58v7" stroke="${dark}" stroke-width="2.200" stroke-linecap="round"/>` : ''}
-  <path d="${slope ? 'M20 22c-3 3-9 4-9 10 0 4 2 5 2 8s-5 4-5 11c0 6 5 9 12 9s12-3 12-9c0-7-5-8-5-11s2-4 2-8c0-6-6-7-9-10z' : 'M20 25c-5-1-10 1-10 7 0 4 3 5 3 8s-5 4-5 11c0 6 5 9 12 9s12-3 12-9c0-7-5-8-5-11s3-4 3-8c0-6-5-8-10-7z'}" fill="${col}"/>
-  <path d="M15 40c-2 1-2 5 0 7M25 40c2 1 2 5 0 7" stroke="${dark}" stroke-width="1.800" fill="none" stroke-linecap="round"/>
-  <path d="M18.300 8h3.400v33h-3.400z" fill="${dark}"/><path d="M17.500 47h5l-1 9h-3z" fill="${dark}"/>
-  <path d="M20 1.500a3.600 3.600 0 1 1-2.600 6" stroke="${dark}" stroke-width="2.600" fill="none" stroke-linecap="round"/>
-  <path d="M15 8.500h10M15 12.500h10" stroke="${dark}" stroke-width="2" stroke-linecap="round"/></g></svg>`;
+  const k = { violin: .7, viola: .78, cello: .88, bass: .92 }[id], pin = id === 'cello' || id === 'bass';
+  return `<svg viewBox="0 0 40 60" aria-hidden="true"><g transform="translate(20 ${58 - (pin ? 5 : 1)}) scale(${k * 1.02}) translate(-20 -62)">${fiddleG(id, col, dark)}</g></svg>`;
 };
-/* Grilo Crico: as antenas enrolam como a voluta do instrumento */
-function crico(mood = 'happy') {
-  const mouth = { happy: 'M52 73q10 10 20 0', wow: 'M55 72q7 -3 14 0q0 12 -7 12t-7 -12z', sad: 'M53 79q9 -8 18 0', play: 'M54 74q8 6 16 0' }[mood];
-  const c = INST[S.inst].c, k = INST[S.inst].k;
-  return `<svg viewBox="0 0 130 136" aria-hidden="true"><path d="M50 32C44 14 28 10 24 18c-3 7 6 11 9 5M78 32C84 14 100 10 104 18c3 7-6 11-9 5" fill="none" stroke="#4c8a2c" stroke-width="5" stroke-linecap="round"/>
-  <path d="M38 118l-10 12M86 118l10 12" stroke="#4c8a2c" stroke-width="7" stroke-linecap="round"/>
-  <ellipse cx="62" cy="108" rx="33" ry="25" fill="#7fc04a"/><ellipse cx="62" cy="112" rx="19" ry="16" fill="#d9f0b6"/>
-  <ellipse cx="64" cy="58" rx="39" ry="33" fill="#8bd052"/><ellipse cx="49" cy="53" rx="12.500" ry="14.500" fill="#fff"/><ellipse cx="79" cy="53" rx="12.500" ry="14.500" fill="#fff"/>
-  <circle cx="${mood === 'sad' ? 49 : 52}" cy="${mood === 'sad' ? 58 : 54}" r="6.500" fill="#2f2945"/><circle cx="${mood === 'sad' ? 79 : 82}" cy="${mood === 'sad' ? 58 : 54}" r="6.500" fill="#2f2945"/><circle cx="54" cy="51" r="2.200" fill="#fff"/><circle cx="84" cy="51" r="2.200" fill="#fff"/>
-  <path d="${mouth}" fill="${mood === 'wow' ? '#8c2f3a' : 'none'}" stroke="#2f5a1a" stroke-width="4" stroke-linecap="round"/><circle cx="36" cy="68" r="5" fill="#f5a58c" opacity=".7"/><circle cx="92" cy="68" r="5" fill="#f5a58c" opacity=".7"/>
-  <g transform="rotate(-24 92 104)"><path d="M72 104c0-7 6-9 10-6 3 2 5 2 8 0 5-4 12-1 12 6s-7 10-12 6c-3-2-5-2-8 0-4 3-10 1-10-6z" fill="${c}"/><path d="M94 102.500h26v3H94z" fill="${k}"/><circle cx="121" cy="104" r="3.400" fill="${k}"/></g>
-  <path d="M74 84l30 44" stroke="#8a5a2b" stroke-width="4" stroke-linecap="round"/><path d="M35 100q-14 2-18 -8" stroke="#7fc04a" stroke-width="8" fill="none" stroke-linecap="round"/></svg>`;
-}
+const ROM = ['I', 'II', 'III', 'IV'];
+const badge = () => composer(PAIR[S.inst][0], 'happy', true);
 const lessonBpm = n => S.bpm[n] || 60;
 
 /* ---- navegação ---- */
 let page = 'path', cleanup = null;
 function theme() { const I = INST[S.inst], r = document.documentElement.style; r.setProperty('--c', I.c); r.setProperty('--k', I.k); r.setProperty('--soft', I.soft); }
 function shell() {
-  document.body.innerHTML = `<div id="app"><nav id="nav" aria-label="Principal"><div class="brand">${crico()}<span>Cordas<br>Soltas</span></div>
+  document.body.innerHTML = `<div id="app"><nav id="nav" aria-label="Principal"><div class="brand">${badge()}<span>Cordas<br>Soltas</span></div>
     <button data-p="path">${ICON.path}Trilha</button><button data-p="tuner">${ICON.tuner}Afinador</button><button data-p="set">${ICON.set}Ajustes</button></nav>
     <main id="main"></main><aside id="aside"></aside></div><div id="lesson" hidden></div>`;
   $$('#nav button').forEach(b => b.onclick = () => go(b.dataset.p));
 }
 function go(p) {
   if (cleanup) { cleanup(); cleanup = null; }
-  page = p; theme(); $('.brand svg').outerHTML = crico();
+  page = p; theme(); $('.brand svg').outerHTML = badge();
   $$('#nav button').forEach(b => { b.classList.toggle('on', b.dataset.p === p); b.setAttribute('aria-current', b.dataset.p === p ? 'page' : 'false'); });
   ({ path: pgPath, tuner: pgTuner, set: pgSet })[p](); aside(); window.scrollTo(0, 0);
 }
@@ -865,10 +986,10 @@ function pgPath() {
   UNITS.forEach((u, ui) => {
     const ls = LESSONS.filter(l => l.u === ui), w = innerWidth < 500 ? 46 : 74;
     const off = ls.map((_, i) => Math.round(Math.sin((i + (ui % 2 ? 2.5 : .5)) * 1.15) * w));
-    const sec = document.createElement('section'); sec.innerHTML = `<div class="unit"><div><small>Unidade ${ui + 1}</small><h2>${u}</h2></div><button class="btn sm" data-g>Guia</button></div>
+    const who = PAIR[S.inst][ui % 2], sec = document.createElement('section'); sec.innerHTML = `<div class="unit"><div><small>Unidade ${ui + 1}</small><h2>${u}</h2></div><button class="btn sm" data-g>Guia</button></div>
     <div class="path">${ls.map((l, i) => { const r = P[l.n] || {}, st = r.stars || 0; return `<button class="node ${st === 3 ? 'gold' : st ? 'done' : ''} ${l.n === next ? 'next' : ''}" style="--x:${off[i]}px" data-n="${l.n}" aria-label="Lição ${l.n}: ${l.t}, ${st} de 3 estrelas">${l.n === next ? '<span class="go">COMEÇAR</span>' : ''}<span class="disc num">${l.n}</span><span class="lbl">${l.t}</span><span class="stars">${stars(st)}</span></button>`; }).join('')}
-    <div class="mascot" style="${ui % 2 ? 'right' : 'left'}:0;bottom:14px">${ui === 0 || ui === 3 ? crico(ui ? 'wow' : 'happy') : ''}</div></div>`;
-    pg.append(sec); $('[data-g]', sec).onclick = guide;
+    <button class="mascot" style="${off[off.length - 1] > 0 ? 'left' : 'right'}:0;bottom:10px" data-w="${who}" aria-label="Conhecer ${COMPOSERS[who].name}">${composer(who, ['happy', 'play', 'happy', 'wow'][ui])}<span>${COMPOSERS[who].name}</span></button></div>`;
+    pg.append(sec); $('[data-g]', sec).onclick = guide; $('.mascot', sec).onclick = () => card(who);
   });
   $$('.node', m).forEach(b => b.onclick = () => openLesson(LESSONS[b.dataset.n - 1]));
 }
@@ -878,10 +999,13 @@ function modal(html, o = {}) {
   addEventListener('keydown', esc); if (!o.lock) ov.onclick = e => { if (e.target === ov) close(); };
   $$('[data-x]', ov).forEach(b => b.onclick = close); return { el: ov, close };
 }
+function card(who) {
+  const C = COMPOSERS[who]; modal(`<div class="m" style="width:170px">${composer(who, 'happy')}</div><div style="text-align:center"><h2>${C.name}</h2><p class="mute num">${C.years} · ${INST[C.inst].name}</p></div><p style="font-weight:600;text-wrap:pretty">${C.fact}</p><button class="btn" data-x>Legal!</button>`);
+}
 function guide() {
   const g = (k, y, sp, ex = '') => Score.svg(k, sp || 10, 62, 48, y).replace('@@', ex), st = d => `<rect x="${d}" y="6" width="1.600" height="30" fill="#3a3550"/>`;
   const m = modal(`<h2>Guia: ${INST[S.inst].name}</h2><div style="border:2px solid var(--line);border-radius:16px;overflow:hidden"><canvas></canvas></div><p class="mute small">Estas são as duas notas de todas as lições. São cordas soltas: a mão esquerda não aperta nada.</p>
-  <div class="gl">${g('nb', 38, 11, st(36.2))}<p><b>Semínima</b>: 1 tempo</p>${g('nh', 38, 11, st(36.2))}<p><b>Mínima</b>: 2 tempos</p>${g('rw', 24, 12, '<rect x="14" y="23" width="34" height="1.600" fill="#8d869f"/>')}<p><b>Pausa de compasso</b>: 4 tempos de silêncio</p>
+  <div class="card fgx"><h3>Dedilhado</h3><div class="hand">${(S.inst === 'bass' ? [['0', 'corda solta'], ['1', 'indicador'], ['2', 'médio'], ['4', 'anelar + mínimo']] : [['0', 'corda solta'], ['1', 'indicador'], ['2', 'médio'], ['3', 'anelar'], ['4', 'mínimo']]).map(f => `<span class="${f[0] === '0' ? 'on' : ''}"><b class="num">${f[0]}</b>${f[1]}</span>`).join('')}</div><p class="mute small">Em todas estas lições o dedilhado é 0. Ré é a corda ${ROM[3 - INST[S.inst].strings.indexOf('D')]} e Lá é a corda ${ROM[3 - INST[S.inst].strings.indexOf('A')]}, contando da mais aguda (I) para a mais grave (IV).</p></div><div class="gl">${g('nb', 38, 11, st(36.2))}<p><b>Semínima</b>: 1 tempo</p>${g('nh', 38, 11, st(36.2))}<p><b>Mínima</b>: 2 tempos</p>${g('rw', 24, 12, '<rect x="14" y="23" width="34" height="1.600" fill="#8d869f"/>')}<p><b>Pausa de compasso</b>: 4 tempos de silêncio</p>
   ${g('t4', 14, 11, `<use href="#t4b"/>`).replace('<path ', '<path id="t4b" ').replace('<use href="#t4b"/>', '<use href="#t4b" y="22"/>')}<p><b>4 por 4</b>: quatro tempos em cada compasso</p>${g('dn', 36, 13)}<p><b>Arco para baixo</b>: em direção à ponta</p>${g('up', 40, 13)}<p><b>Arco para cima</b>: em direção ao talão</p>
   <svg viewBox="0 0 62 48"><g stroke="${INST[S.inst].c}" stroke-width="4" stroke-linecap="round"><path d="M31 14v20M22.300 19l17.400 10M39.700 19L22.300 29"/></g></svg><p><b>Preparar o arco</b>: vá para a corda nova antes do tempo</p>
   <svg viewBox="0 0 62 48"><g fill="#3a3550"><rect x="36" y="6" width="5" height="36"/><rect x="31" y="6" width="1.800" height="36"/><circle cx="25" cy="19" r="2.500"/><circle cx="25" cy="29" r="2.500"/></g></svg><p><b>Ritornello</b>: toque o trecho outra vez</p></div><button class="btn" data-x>Entendi</button>`);
@@ -891,7 +1015,7 @@ function toast(t) { $$('.toast').forEach(x => x.remove()); const d = document.cr
 function micError(e) {
   const local = location.protocol === 'content:' || !AE.secure();
   const t = e && (e.code === 'insecure' || local) ? 'Este jeito de abrir o arquivo não dá acesso ao microfone. No computador, abra com Chrome ou Edge. No celular, use o link https do app, não o arquivo.' : e && e.name === 'NotAllowedError' ? 'O navegador bloqueou o microfone. Clique no ícone ao lado do endereço, permita o microfone e tente de novo.' : e && e.name === 'NotFoundError' ? 'Nenhum microfone encontrado. Conecte um e tente de novo.' : 'Não consegui abrir o microfone. Veja se outro programa está usando e tente de novo.';
-  modal(`<div class="m">${crico('sad')}</div><h2 style="text-align:center">Sem microfone</h2><p class="mute">${t}</p><button class="btn" data-x>Entendi</button>`);
+  modal(`<div class="m">${hero('sad')}</div><h2 style="text-align:center">Sem microfone</h2><p class="mute">${t}</p><button class="btn" data-x>Entendi</button>`);
 }
 
 /* ---- lição ---- */
@@ -915,14 +1039,14 @@ function openLesson(L) {
 function closeLesson() { $('#lesson').hidden = true; $('#lesson').innerHTML = ''; document.body.style.overflow = ''; go(page); }
 function setupView(L) {
   stopRun(); $('#lesson').classList.remove('playing'); $('.bar i').style.width = '0'; $('#chip').textContent = INST[S.inst].name; $('#lesson').scrollTop = 0;
-  $('#lb').innerHTML = `<div class="ttl"><div class="m">${crico()}</div><div class="bubble"><h2>${L.n}. ${L.t}</h2><p class="mute">${L.tip}</p></div></div>
+  $('#lb').innerHTML = `<div class="ttl"><div class="m">${hero('happy', L.n % 2 === 0)}</div><div class="bubble"><h2>${L.n}. ${L.t}</h2><p class="mute">${L.tip}</p></div></div>
   <div class="score"><canvas id="pv" role="img" aria-label="Partitura da lição ${L.n}"></canvas></div>
   <div class="opts"><div class="modes" role="radiogroup" aria-label="Modo">
     <button class="mode" data-m="listen" role="radio">${ICON.ear}<div><b>Ouvir e tocar junto</b><span>Som de ${INST[S.inst].name.toLowerCase()} com a partitura rolando</span></div></button>
-    <button class="mode" data-m="pulse" role="radio">${ICON.metro}<div><b>Só com o pulso</b><span>Você toca sozinho; o app diz se acertou</span></div></button>
+    <button class="mode" data-m="pulse" role="radio">${ICON.metro}<div><b>Só com o pulso</b><span>O instrumento não soa: você toca e o app diz se acertou</span></div></button>
     <div class="note" id="nt"></div></div>
   <div class="card"><div class="bpm"><button class="btn sec" id="bm" aria-label="Mais devagar">−</button><div class="v"><b class="num" id="bv"></b> <span>bpm</span></div><button class="btn sec" id="bp" aria-label="Mais rápido">+</button></div><input type="range" id="br" min="40" max="132" step="1" aria-label="Andamento em bpm">
-    ${swt('sph', S.phones, 'Estou de fones')}${swt('srp', S.repeat, 'Tocar o ritornello')}${swt('snm', S.names, 'Mostrar nome das notas')}</div></div>`;
+    ${swt('sph', S.phones, 'Estou de fones')}${swt('srp', S.repeat, 'Tocar o ritornello')}${swt('sfg', S.fing, 'Mostrar dedilhado')}${swt('snm', S.names, 'Mostrar nome das notas')}</div></div>`;
   const bv = v => { v = clamp(Math.round(v), 40, 132); S.bpm[L.n] = v; $('#bv').textContent = v; $('#br').value = v; save(); }; bv(lessonBpm(L.n));
   $('#br').oninput = e => bv(+e.target.value); $('#bm').onclick = () => bv(lessonBpm(L.n) - 2); $('#bp').onclick = () => bv(lessonBpm(L.n) + 2);
   const modeUI = () => { $$('.mode').forEach(b => { const on = b.dataset.m === S.mode; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
@@ -931,34 +1055,45 @@ function setupView(L) {
     else if (bt) t = 'Delay ainda não calibrado para ' + (S.phones ? 'estes fones' : 'o alto-falante') + '. <button id="cnow" style="text-decoration:underline;font-weight:900">Calibrar em 10 segundos</button>';
     nt.hidden = !t; nt.innerHTML = t; if ($('#cnow')) $('#cnow').onclick = () => calModal(modeUI); };
   $$('.mode').forEach(b => b.onclick = () => { S.mode = b.dataset.m; save(); modeUI(); }); modeUI();
-  bindSw('sph', () => S.phones, v => { S.phones = v; modeUI(); }); bindSw('srp', () => S.repeat, v => S.repeat = v); bindSw('snm', () => S.names, v => { S.names = v; pv(); });
-  const pv = () => $('#pv') && Score.rows($('#pv'), L, S.inst, { names: S.names }); pv(); window.onresize = pv;
-  $('#dr').className = 'drawer plain'; $('#dr > div').innerHTML = `<span class="mute small">${L.bars} compassos</span><button class="btn" id="start">Tocar</button>`; $('#start').onclick = () => start(L);
+  bindSw('sph', () => S.phones, v => { S.phones = v; modeUI(); }); bindSw('srp', () => S.repeat, v => S.repeat = v); bindSw('sfg', () => S.fing, v => { S.fing = v; pv(); }); bindSw('snm', () => S.names, v => { S.names = v; pv(); });
+  const pv = () => $('#pv') && Score.rows($('#pv'), L, S.inst, { names: S.names, fing: S.fing }); pv(); window.onresize = pv;
+  $('#dr').className = 'drawer plain'; $('#dr > div').innerHTML = `<button class="lnk" id="hs">Não ouve nada?</button><button class="btn" id="start">Tocar</button>`; $('#start').onclick = () => start(L); $('#hs').onclick = soundHelp;
+}
+function soundHelp() {
+  const m = modal(`<div class="m">${hero('happy')}</div><h2 style="text-align:center">Testar o som</h2><button class="btn" id="st"><span class="vu"><i></i><i></i><i></i></span> Tocar exemplo</button><p class="mute small">As barrinhas mexem quando o app está emitindo som. Se elas mexem e você não ouve:</p>
+  <div class="gl1"><p><b>Celular:</b> suba o volume de mídia e desligue o modo silencioso. No iPhone, confira a chave lateral.</p><p><b>Bluetooth:</b> desconecte o fone. O microfone dele costuma cortar o som.</p><p><b>Computador:</b> veja se a aba está sem som e qual saída o sistema está usando.</p><p><b>Modo:</b> em “Só com o pulso” o instrumento não toca. Escolha “Ouvir e tocar junto”.</p></div><button class="btn sec" data-x>Fechar</button>`, { close: () => { on = false; AE.ctx && AE.stopAll(); } });
+  let on = true, vu = 0; const f = () => { if (!on) return; vu = Math.max(AE.ctx ? AE.level() : 0, vu * .9); $$('.vu i', m.el).forEach((e, i) => e.style.opacity = vu > [.02, .12, .28][i] ? 1 : .25); requestAnimationFrame(f); }; f();
+  $('#st').onclick = async () => { try { await AE.ensureCtx(); } catch (e) { return toast('O navegador não liberou o áudio.'); } AE.stopAll(); AE.notesOn(true); const t = AE.ctx.currentTime + .15; 'DDAA'.split('').forEach((s, i) => { AE.click(t + i * .7, i === 0, .8, true); AE.tone(S.inst, s, t + i * .7, .66, 1, S.a4); }); };
 }
 let wake = null;
 async function start(L) {
   const btn = $('#start'); if (btn) { btn.disabled = true; btn.textContent = 'Preparando…'; }
   const listen = S.mode === 'listen', grade = !listen || S.phones; let mic = true;
   try { await AE.ensureCtx(); } catch (e) { toast('O navegador não liberou o áudio. Toque de novo.'); return setupView(L); }
-  try { await AE.ensureMic(); } catch (e) { mic = false; if (!listen) { setupView(L); return micError(e); } }
+  // sem correção não abre o microfone: no celular e em fone Bluetooth ele derruba ou desvia o som
+  if (grade) { try { await AE.ensureMic(); } catch (e) { mic = false; if (!listen) { setupView(L); return micError(e); } } }
+  else { mic = false; if (/Android|iP(hone|ad|od)/.test(navigator.userAgent)) AE.dropMic(); }
+  if (AE.ctx.state !== 'running') { setupView(L); return toast('O navegador segurou o som. Toque em Tocar mais uma vez.'); }
   if ($('#lesson').hidden || !$('#lb')) return;
   try { wake = await navigator.wakeLock.request('screen'); } catch (e) { }
   const bpm = lessonBpm(L.n), spb = 60 / bpm, passes = S.repeat ? 2 : 1, total = L.beats * passes, I = INST[S.inst], ctx = AE.ctx;
   $('#lesson').classList.add('playing'); $('#lesson').scrollTop = 0;
-  $('#lb').innerHTML = `<div class="ttl"><div class="bubble" style="flex:1"><h2>${L.n}. ${L.t}</h2></div><span class="chip num">${bpm} bpm</span></div><div class="score"><canvas id="cv" role="img" aria-label="Partitura rolando"></canvas><div class="count num" id="cnt"></div></div>
-  <div class="live"><div class="meter"><div><div class="nn" id="nn">–</div><div class="cc num" id="cc">&nbsp;</div></div><div class="track"><div class="rail"></div><div class="mid"></div><div class="ndl" id="nd"></div></div></div>
-  <div class="strs" aria-label="Cordas">${I.strings.map((s, i) => `<div class="str" data-s="${s}"><b>${NOTE_PT[s]}</b><i style="width:${7 - i * 1.4}px"></i></div>`).join('')}</div></div>`;
+  $('#lb').innerHTML = `<div class="ttl"><div class="bubble" style="flex:1"><h2>${L.n}. ${L.t}</h2></div><button class="snd" id="snd" aria-pressed="${listen}"><span class="vu"><i></i><i></i><i></i></span><span>${INST[S.inst].name}</span></button><span class="chip num">${bpm} bpm</span></div><div class="score"><canvas id="cv" role="img" aria-label="Partitura rolando"></canvas><div class="count num" id="cnt"></div></div>
+  <div class="live ${grade && mic ? '' : 'solo'}"><div class="meter"><div><div class="nn" id="nn">–</div><div class="cc num" id="cc">&nbsp;</div></div><div class="track"><div class="rail"></div><div class="mid"></div><div class="ndl" id="nd"></div></div></div>
+  <div class="strs" aria-label="Cordas">${I.strings.map((s, i) => `<div class="str" data-s="${s}"><em>${ROM[3 - i]}</em><b>${NOTE_PT[s]}</b><u>0</u><i style="width:${7 - i * 1.4}px"></i></div>`).join('')}</div></div>`;
   $('#chip').textContent = grade && mic ? 'Corrigindo' : 'Tocando junto';
-  $('#dr').className = 'drawer plain play'; $('#dr > div').innerHTML = `<div class="fb"><div class="ic">♪</div><div><b>Prepare o arco</b><span>Um compasso de contagem</span></div></div><button class="btn sec" id="stop">Parar</button>`; $('#stop').onclick = () => setupView(L);
+  $('#dr').className = 'drawer plain play'; $('#dr > div').innerHTML = `<div class="fb"><div class="ic">♪</div><div><b>Prepare o arco</b><span>${listen ? 'Você ouve o instrumento e o pulso' : 'Neste modo soa só o pulso'}</span></div></div><button class="btn sec" id="stop">Parar</button>`; $('#stop').onclick = () => setupView(L);
   // agenda tudo no relógio de áudio (precisão de amostra)
   const T0 = ctx.currentTime + .35 + 4 * spb, notes = [];
   for (let p = 0; p < passes; p++) L.notes.forEach(n => notes.push({ ...n, b: n.b + p * L.beats }));
-  for (let b = -4; b < total; b++) AE.click(T0 + b * spb, b % 4 === 0, (b < 0 ? Math.max(.4, S.vClick) : listen ? S.vClick * .5 : S.vClick));
-  if (listen) notes.forEach(n => AE.tone(S.inst, n.s, T0 + n.b * spb, n.d * spb * .985, S.vNote, S.a4));
+  for (let b = -4; b < total; b++) AE.click(T0 + b * spb, b % 4 === 0, (b < 0 ? Math.max(.5, S.vClick) : listen ? S.vClick * .6 : S.vClick), !(grade && mic) || S.phones);
+  AE.notesOn(listen); notes.forEach(n => AE.tone(S.inst, n.s, T0 + n.b * spb, n.d * spb * .985, S.vNote, S.a4));
   const refs = { D: hz(I.midi.D, S.a4), A: hz(I.midi.A, S.a4) }, lat = rtl();
   const R = run = { L, T0, spb, total, passes, notes, refs, lat, grade: grade && mic, listen, trail: [], last: null, alive: true, peak: -99, lastPitch: 0 };
   R.sc = new DSP.Scorer({ notes, refs, T0, spb, rtl: lat, level: S.level, inst: S.inst }); R.an = new DSP.Analyzer(ctx.sampleRate, S.inst);
   const tol = DSP.LEVELS[S.level].cents;
+  R.snd = listen; $('#snd').onclick = e => { R.snd = !R.snd; AE.notesOn(R.snd); $('#snd').setAttribute('aria-pressed', R.snd);
+    if (R.snd && !S.phones && R.grade) { R.grade = false; R.trail.length = 0; $('#chip').textContent = 'Tocando junto'; $('#dr').className = 'drawer plain play'; $('.fb').innerHTML = '<div class="ic">♪</div><div><b>Toque junto</b><span>Sem fones, a correção fica desligada</span></div>'; } };
   if (mic) R.off = AE.onMic((b, t) => {
     if (!R.alive) return; const ev = R.an.push(b, t);
     for (const p of ev.pitch) { R.peak = Math.max(R.peak, p.db); let s = null, c = 0, q = 0; if (p.f && p.c > .6) { const d = DSP.centsTo(p.f, refs.D), a = DSP.centsTo(p.f, refs.A); s = Math.abs(d) < Math.abs(a) ? 'D' : 'A'; c = s === 'D' ? d : a; if (Math.abs(c) > 130) s = null; }
@@ -970,10 +1105,10 @@ async function start(L) {
   const frame = () => {
     if (!R.alive) return; const cv = $('#cv'); if (!cv) return;
     const beat = (AE.heard() + S.vis + .008 - T0) / spb; R.beat = beat;
-    Score.scroll(cv, { L, inst: S.inst, beat, passes, total, res: R.grade ? R.sc.res : null, trail: R.trail, names: S.names, run: true });
+    Score.scroll(cv, { L, inst: S.inst, beat, passes, total, res: R.grade ? R.sc.res : null, trail: R.trail, names: S.names, fing: S.fing, run: true });
     const ci = $('#cnt'), t = beat < -.02 && beat > -4.2 ? String(clamp(Math.floor(beat) + 5, 1, 4)) : ''; if (ci.textContent !== t) ci.textContent = t;
     $('.bar i').style.width = clamp(beat / total * 100, 0, 100) + '%';
-    meter(R); strings(R, beat);
+    meter(R); strings(R, beat); R.vu = Math.max(AE.level(), (R.vu || 0) * .9); $$('.vu i').forEach((e, i) => e.style.opacity = R.vu > [.02, .12, .28][i] ? 1 : .25);
     if (ctx.currentTime > T0 + total * spb + lat + .35) return finish(R);
     R.raf = requestAnimationFrame(frame);
   };
@@ -999,7 +1134,7 @@ function finish(R) {
   const res = R.sc.res; $('#chip').textContent = INST[S.inst].name; $('#lesson').scrollTop = 0;
   const again = `<button class="btn sec" id="ag">Tocar de novo</button>`, nextL = LESSONS[L.n];
   if (!R.grade) {
-    touch(5); $('#lb').innerHTML = `<div class="res"><div class="m">${crico('happy')}</div><div style="display:grid;gap:8px"><h1>Boa!</h1><p class="mute">Agora toque só com o pulso para o app corrigir.</p></div></div>`;
+    touch(5); $('#lb').innerHTML = `<div class="res"><div class="m">${hero('happy')}</div><div style="display:grid;gap:8px"><h1>Boa!</h1><p class="mute">Agora toque só com o pulso para o app corrigir.</p></div></div>`;
     $('#dr').className = 'drawer resd'; $('#dr > div').innerHTML = again + `<button class="btn" id="nx">Só com o pulso</button>`; $('#ag').onclick = () => start(L); $('#nx').onclick = () => { S.mode = 'pulse'; save(); start(L); }; return;
   }
   const n = res.length, pts = Math.round(res.reduce((a, r) => a + r.pts, 0) / n), st = pts >= 90 ? 3 : pts >= 75 ? 2 : pts >= 55 ? 1 : 0;
@@ -1014,12 +1149,12 @@ function finish(R) {
   else if (res.filter(r => r.v === 'bow').length > n * .25) tip = 'Muitas notas emendaram. Troque a direção do arco com clareza em cada nota.';
   else if (st === 3) tip = 'Que tal um pouco mais rápido?'; else tip = 'Tente mais devagar e acelere aos poucos.';
   const fix = !all && !isNaN(bias) && Math.abs(bias) > .028 && spread < .045 && R.sc.errs.length >= 8 ? bias : 0;
-  $('#lb').innerHTML = `<div class="res"><div class="m">${crico(st === 3 ? 'wow' : st ? 'happy' : 'sad')}</div><div style="display:grid;gap:8px"><h1>${head}</h1><div class="big" role="img" aria-label="${st} de 3 estrelas">${stars(st)}</div><p class="mute">${tip}</p></div></div>
+  $('#lb').innerHTML = `<div class="res"><div class="m">${hero(st === 3 ? 'wow' : st ? 'happy' : 'sad', L.n % 2 === 0)}</div><div style="display:grid;gap:8px"><h1>${head}</h1><div class="big" role="img" aria-label="${st} de 3 estrelas">${stars(st)}</div><p class="mute">${tip}</p></div></div>
   <div class="tiles">${[['Nota', pts, 'var(--c)', 'var(--k)'], ['Afinação', pOk + '%', '#43ad3c', '#31892b'], ['Ritmo', tOk + '%', '#2090e6', '#136fb8'], ['Pontos', '+' + xp, '#e09a00', '#8f6200']].map(t => `<div class="tile num" style="--tc:${t[2]};--tk:${t[3]}">${t[0]}<b>${t[1]}</b></div>`).join('')}</div>
   ${fix ? `<div class="note" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span style="flex:1 1 260px">Suas notas vieram sempre cerca de <b class="num">${Math.abs(ms(fix))} ms ${fix > 0 ? 'depois' : 'antes'}</b> do pulso, com regularidade. Se você sentiu que tocou junto, é o delay do aparelho.</span><button class="btn sm" id="fx">Corrigir delay</button></div>` : ''}
   <div class="score"><canvas id="rv" role="img" aria-label="Partitura com as notas certas e erradas"></canvas></div>
   <div class="legend"><span><i style="background:#43ad3c"></i>✓ certa</span><span><i style="background:#f2a900"></i>↑ grave, suba · ↓ aguda, desça · → adiantou · ← atrasou · – curta ou emendada</span><span><i style="background:#e8484f"></i>✕ não ouvi ou corda errada</span></div>`;
-  const rv = () => $('#rv') && Score.rows($('#rv'), L, S.inst, { res }); rv(); window.onresize = rv;
+  const rv = () => $('#rv') && Score.rows($('#rv'), L, S.inst, { res, fing: S.fing }); rv(); window.onresize = rv;
   if (fix) $('#fx').onclick = e => { S.rtl[rtlKey()] = clamp(R.lat + fix, 0, .8); save(); e.target.disabled = true; e.target.textContent = 'Corrigido'; };
   $('#dr').className = 'drawer resd'; const faster = st === 3 && lessonBpm(L.n) < 120;
   $('#dr > div').innerHTML = again + `<div class="row">${faster ? `<button class="btn sec" id="fs">+6 bpm</button>` : `<button class="btn sec" id="op">Opções</button>`}${st && nextL ? `<button class="btn ok" id="nx">Próxima lição</button>` : `<button class="btn" id="hm">Trilha</button>`}</div>`;
@@ -1096,20 +1231,20 @@ function pgSet() {
 function calModal(after) {
   if (typeof after !== 'function') after = () => go(page);
   let dead = false, undo = null; const M = modal('<div id="cb" style="display:flex;flex-direction:column;gap:16px"></div>', { close: () => { dead = true; undo && undo(); AE.ctx && AE.stopAll(); after(); } }), cb = $('#cb', M.el);
-  const home = () => { cb.innerHTML = `<div class="m">${crico('happy')}</div><h2 style="text-align:center">Calibrar o delay</h2>
+  const home = () => { cb.innerHTML = `<div class="m">${hero('happy')}</div><h2 style="text-align:center">Calibrar o delay</h2>
     <button class="mode ${S.phones ? '' : 'on'}" id="ca">${ICON.metro}<div><b>Pelo alto-falante</b><span>O app toca 8 bipes e ouve a si mesmo. O mais preciso. Volume médio, sala quieta.</span></div></button>
     <button class="mode ${S.phones ? 'on' : ''}" id="cp">${ICON.ear}<div><b>De fones, tocando junto</b><span>Toque a corda Ré em semínimas junto com o pulso. Serve para qualquer fone.</span></div></button>
     <p class="note">Fone Bluetooth atrasa muito e varia. Prefira fone com fio ou o alto-falante.</p><button class="btn sec" data-c>Agora não</button>`; $('[data-c]', cb).onclick = M.close; $('#ca').onclick = () => { S.phones = false; save(); auto(); }; $('#cp').onclick = () => { S.phones = true; save(); play(); }; };
-  const fail = (t, retry) => { cb.innerHTML = `<div class="m">${crico('sad')}</div><h2 style="text-align:center">Não deu certo</h2><p class="mute">${t}</p><div class="row"><button class="btn sec" id="ch">Voltar</button><button class="btn" id="cr">Tentar de novo</button></div>`; $('#ch').onclick = home; $('#cr').onclick = retry; };
-  const done = (v, extra) => { S.rtl[rtlKey()] = v; save(); cb.innerHTML = `<div class="m">${crico('wow')}</div><h2 style="text-align:center">Pronto: <span class="num">${ms(v)} ms</span></h2><p class="mute" style="text-align:center">${extra}</p><button class="btn" id="cd">Continuar</button>`; $('#cd').onclick = M.close; };
+  const fail = (t, retry) => { cb.innerHTML = `<div class="m">${hero('sad')}</div><h2 style="text-align:center">Não deu certo</h2><p class="mute">${t}</p><div class="row"><button class="btn sec" id="ch">Voltar</button><button class="btn" id="cr">Tentar de novo</button></div>`; $('#ch').onclick = home; $('#cr').onclick = retry; };
+  const done = (v, extra) => { S.rtl[rtlKey()] = v; save(); cb.innerHTML = `<div class="m">${hero('wow')}</div><h2 style="text-align:center">Pronto: <span class="num">${ms(v)} ms</span></h2><p class="mute" style="text-align:center">${extra}</p><button class="btn" id="cd">Continuar</button>`; $('#cd').onclick = M.close; };
   const auto = async () => {
-    cb.innerHTML = `<div class="m">${crico('play')}</div><h2 style="text-align:center">Ouvindo os bipes…</h2><p class="mute" style="text-align:center">Fique em silêncio por alguns segundos.</p><div class="dots">${'<i></i>'.repeat(8)}</div>`;
+    cb.innerHTML = `<div class="m">${hero('play')}</div><h2 style="text-align:center">Ouvindo os bipes…</h2><p class="mute" style="text-align:center">Fique em silêncio por alguns segundos.</p><div class="dots">${'<i></i>'.repeat(8)}</div>`;
     let r; try { r = await AE.autoCal(k => $$('.dots i', cb).forEach((d, i) => d.classList.toggle('hit', i < k))); } catch (e) { if (dead) return; M.close(); return micError(e); } if (dead) return;
     if (r.ok) done(r.rtl, `${r.n} medições, com variação de ${Math.max(1, ms(r.spread))} ms.`); else fail(r.why === 'mudo' ? 'O microfone não captou som nenhum. Confira qual microfone está selecionado no sistema.' : r.why === 'fraco' ? 'Os bipes chegaram fracos. Aumente o volume, tire os fones e tente de novo.' : 'As medidas variaram demais. Feche outros programas de áudio e evite Bluetooth.', auto);
   };
   const play = async () => {
     try { await AE.ensureMic(); } catch (e) { M.close(); return micError(e); } if (dead) return;
-    const N = 16, spb = .75, hits = []; cb.innerHTML = `<div class="m">${crico('play')}</div><h2 style="text-align:center" id="ch2">Escute 4 pulsos…</h2><p class="mute" style="text-align:center">Depois toque a corda Ré, uma nota curta em cada pulso, trocando o arco.</p><div class="dots">${'<i></i>'.repeat(N)}</div><button class="btn sec" id="cc2">Cancelar</button>`; $('#cc2').onclick = M.close;
+    const N = 16, spb = .75, hits = []; cb.innerHTML = `<div class="m">${hero('play')}</div><h2 style="text-align:center" id="ch2">Escute 4 pulsos…</h2><p class="mute" style="text-align:center">Depois toque a corda Ré, uma nota curta em cada pulso, trocando o arco.</p><div class="dots">${'<i></i>'.repeat(N)}</div><button class="btn sec" id="cc2">Cancelar</button>`; $('#cc2').onclick = M.close;
     const t0 = AE.ctx.currentTime + .4; for (let k = 0; k < N + 4; k++) AE.click(t0 + k * spb, k % 4 === 0, .8);
     const T = t0 + 4 * spb, an = new DSP.Analyzer(AE.ctx.sampleRate, S.inst), pit = []; let pend = [];
     const off = AE.onMic((b, t) => { const ev = an.push(b, t); pit.push(...ev.pitch); pend.push(...ev.onsets); pend = pend.filter(o => { if (t < o.t + .2) return true; if (pit.some(p => p.t > o.t && p.t < o.t + .2 && p.f && p.c > .7)) { const k = Math.round((o.t - .13 - T) / spb), e = o.t - T - k * spb; if (k >= 0 && k < N && !hits[k] && e > -.12 && e < .5) { hits[k] = { e }; const d = $$('.dots i', cb)[k]; d && d.classList.add('hit'); } } return false; }); });
@@ -1125,8 +1260,8 @@ function calModal(after) {
 
 /* ---- início ---- */
 function welcome() {
-  const M = modal(`<div class="m">${crico('happy')}</div><h2 style="text-align:center">Oi, eu sou o Crico!</h2><p class="mute" style="text-align:center">São 12 lições com as cordas Ré e Lá. Qual é o seu instrumento?</p><div id="wi"></div><button class="btn" id="wg">Continuar</button>`, { lock: true });
-  $('#wi').append(instPicker(() => { $('.m', M.el).innerHTML = crico('happy'); })); $('#wg').onclick = () => { S.first = false; save(); M.close(); go('path'); calModal(); };
+  const M = modal(`<div class="m">${hero('happy')}</div><h2 style="text-align:center" id="wn"></h2><p class="mute" style="text-align:center">São 12 lições com as cordas Ré e Lá. Qual é o seu instrumento?</p><div id="wi"></div><button class="btn" id="wg">Continuar</button>`, { lock: true });
+  const hi = () => { $('.m', M.el).innerHTML = hero('happy'); $('#wn').textContent = COMPOSERS[PAIR[S.inst][0]].say; }; hi(); $('#wi').append(instPicker(hi)); $('#wg').onclick = () => { S.first = false; save(); M.close(); go('path'); calModal(); };
 }
 shell(); theme(); go('path'); if (S.first) welcome();
 if (document.fonts) document.fonts.load('800 16px Nunito').then(() => { });
