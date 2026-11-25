@@ -165,6 +165,10 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 @media (max-width: 760px) { .quiz { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .gl1 { display: grid; gap: 8px; font-size: 15px; font-weight: 600; }
 
+#lesson.playing.full .count { font-size: 90px; }
+@media (max-width: 760px) { .playing.full .live { display: none; } .playing .ttl { flex-wrap: wrap; gap: 8px; } .playing .ttl .bubble { flex: 1 1 100% !important; padding: 7px 13px; } .playing .ttl h2 { font-size: 18px; } }
+@media (max-height: 700px) { .playing.full .live { display: none; } }
+
 /* resultado */
 .res { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 22px; align-items: center; }
 .res .m { width: 150px; }
@@ -909,13 +913,14 @@ const Score = (() => {
   /* Partitura inteira em linhas (prévia e resultado). res: resultado por nota (1 ou 2 passagens) */
   function rows(cv, L, inst, opt = {}) {
     const w = cv.parentElement.clientWidth; if (!w) return;
-    const sp = w < 560 ? 8.5 : 10, head = sp * 7.4, pad = 16;
-    const per = Math.max(1, Math.min(L.bars, w < 480 ? 2 : w < 900 ? 4 : 4)), n = Math.ceil(L.bars / per);
-    const fx = opt.fing ? 1.4 : 0, I = INST[inst], lo = lowOf(L, I), top = L.sec ? 1.2 : 0, rowH = sp * ((opt.res ? 12.6 : 11.4) + fx + lo + top), h = n * rowH + sp * 1.2, g = setup(cv, w, h);
+    const sp = opt.sp || (w < 560 ? 8.5 : 10), head = sp * 7.4, pad = 16;
+    const per = opt.per || Math.max(1, Math.min(L.bars, w < 480 ? 2 : 4)), n = Math.ceil(L.bars / per);
+    const fx = opt.fing ? 1.4 : 0, I = INST[inst], lo = lowOf(L, I), top = L.sec ? 1.2 : 0, rowH = sp * rowUnits(L, I, opt), h = n * rowH + sp * 1.2, g = setup(cv, w, h);
     for (let r = 0; r < n; r++) {
       const yb = r * rowH + sp * (8 + fx + top), x0 = pad, x1 = w - pad, bx = x0 + (r ? sp * 4.4 : head) + sp * (L.sec ? 2.9 : .6), ppb = (x1 - bx - sp * .6) / (per * 4);
+      const X = b => bx + (b - r * per * 4) * ppb + sp * 1.1, b0 = r * per * 4, b1 = Math.min(L.beats, b0 + per * 4), cur = opt.cur, here = cur && cur.b >= b0 - 1e-6 && cur.b < b1;
+      if (here && cur.run) { const m = Math.floor(cur.b / 4) * 4, xa = X(m) - sp * 1.5; g.fillStyle = I.soft; g.beginPath(); g.roundRect(xa, yb - sp * (6.9 + fx), Math.min(x1, X(m + 4) - sp * 1.5) - xa, sp * (9.6 + fx + lo), sp * .8); g.fill(); }
       staff(g, x0, x1, yb, sp); clef(g, inst, x0 + sp * .5, yb, sp); if (!r) timesig(g, x0 + sp * 4.6, yb, sp);
-      const X = b => bx + (b - r * per * 4) * ppb + sp * 1.1, b0 = r * per * 4, b1 = Math.min(L.beats, b0 + per * 4);
       const secEnd = new Set((L.sec || [[0, L.beats]]).map(q => q[1])), end = L.once ? finalBar : repeatEnd;
       for (let b = b0 + 4; b <= b1; b += 4) { const x = b === b1 ? x1 : X(b) - sp * 1.9; if (secEnd.has(b)) { end(g, L.sec && b < b1 ? x - sp * 1.1 : x, yb, sp); if (L.sec && b < b1) repeatStart(g, x - sp * 1.1, yb, sp); } else if (b === L.beats) end(g, x, yb, sp); else barline(g, x, yb, sp); }
       (L.sec || []).forEach((q, k) => { if (q[0] >= b0 && q[0] < b1) { if (q[0] === b0) repeatStart(g, X(q[0]) - sp * 2.9, yb, sp); letter(g, 'ABCD'[k], X(q[0]) - sp * 2.3, yb - sp * (6.6 + fx), sp, I.k); } });
@@ -923,12 +928,42 @@ const Score = (() => {
       L.stars.forEach(b => { if (b >= b0 && b < b1) star(g, X(b) - sp * 1.75, yb, sp, 0, I.c); });
       L.notes.forEach((q, i) => {
         if (q.b < b0 || q.b >= b1) return; const x = X(q.b), pos = I.pos[q.s], rs = opt.res ? opt.res.filter((z, k) => z && opt.src[k] === i) : [];
-        const worst = rs.length ? rs.reduce((a, c) => c.pts < a.pts ? c : a) : null;
+        let worst = rs.length ? rs.reduce((a, c) => c.pts < a.pts ? c : a) : null, shown = rs.length > 2 ? [worst] : rs;
+        if (cur) { // ao vivo: a cor é a da passagem atual; os sinais de antes ficam
+          const now = cur.sg ? opt.res && opt.res[cur.sg.n0 + (cur.sg.idx.get(i) ?? -1e9)] : null; worst = now || (cur.sg && cur.sg.idx.has(i) ? null : worst); if (rs.length > 2 || (cur.sg && cur.sg.of > 2)) shown = now ? [now] : [];
+          if (cur.run && here && cur.b >= q.b && cur.b < q.b + q.d) { const y = yOf(pos, yb, sp); g.fillStyle = I.c + '40'; g.beginPath(); g.arc(x, y, sp * 1.15, 0, 7); g.fill(); }
+        }
         note(g, q, x, yb, sp, pos, worst ? COL[kind(worst.v)] : COL.ink); bow(g, q, x, yb, sp, pos, opt.fing); if (opt.fing) finger(g, x, yb, sp, pos, I.k);
-        (rs.length > 2 ? [worst] : rs).forEach((z, j) => mark(g, z, x, yb + sp * (3.1 + lo) + j * sp * 1.45, sp));
-        if (opt.names) { g.fillStyle = I.k; g.font = `800 ${sp * 1.25}px Nunito`; g.textAlign = 'center'; g.fillText(NOTE_PT[q.s], x, yb + sp * (3.2 + lo)); }
+        shown.forEach((z, j) => mark(g, z, x, yb + sp * (3.1 + lo) + j * sp * 1.45, sp));
+        if (opt.names) { g.fillStyle = I.k; g.font = `800 ${sp * 1.25}px Nunito`; g.textAlign = 'center'; g.fillText(NOTE_PT[q.s], x, yb + sp * (3.2 + lo + (opt.res ? 1.45 * (opt.marks || 1) : 0))); }
       });
+      if (cur && cur.trail && cur.sg) for (const t of cur.trail) { const tb = t.b - cur.sg.at + cur.sg.from; if (!t.s || t.b < cur.sg.at || tb >= cur.sg.to || tb < b0 || tb >= b1) continue; g.fillStyle = t.q === 2 ? '#43ad3c' : t.q === 1 ? '#f2a900' : '#e8484f'; g.beginPath(); g.arc(X(tb), yOf(I.pos[t.s], yb, sp) - Math.max(-1.2, Math.min(1.2, t.c / 50)) * sp, Math.max(1.1, sp * .15), 0, 7); g.fill(); }
+      if (here) { // cursor
+        const fr = ((cur.beat % 1) + 1) % 1, hit = cur.run ? Math.max(0, 1 - fr * 3.2) : 0, x = X(cur.b), yt = yb - sp * (6.9 + fx), yl = yb + sp * (2.4 + lo);
+        if (hit) { g.globalAlpha = hit * .25; g.fillStyle = I.c; g.fillRect(x - sp * .8, yt, sp * 1.6, yl - yt); g.globalAlpha = 1; }
+        g.fillStyle = I.c; g.fillRect(x - 1.25, yt, 2.5, yl - yt); g.beginPath(); g.arc(x, yt, sp * (.5 + hit * .4), 0, 7); g.fill(); opt.y = r * rowH; opt.rowH = rowH;
+      }
     }
+  }
+  const rowUnits = (L, I, opt) => (opt.res || opt.live ? 11.15 + 1.45 * (opt.marks || 1) : 11.4) + (opt.fing ? 1.4 : 0) + lowOf(L, I) + (L.sec ? 1.2 : 0) + (opt.names && opt.live ? 1.3 : 0);
+  /* maior tamanho em que a partitura inteira cabe em w × hMax */
+  function fit(L, inst, w, hMax, opt) {
+    const u = rowUnits(L, INST[inst], opt); let best = null;
+    for (const per of [1, 2, 3, 4, 8]) {
+      if (per > L.bars) continue; const n = Math.ceil(L.bars / per);
+      const byW = (w - 32) / (8.8 + (L.sec ? 2.3 : 0) + per * 4 * (L.sec && per > 2 ? 5.3 : 3.15) + .6), byH = hMax / (n * u + 1.2), sp = Math.min(byW, byH, 17);
+      if (!best || sp > best.sp + .15) best = { per, sp };
+    }
+    best.sp = Math.max(4.6, Math.floor(best.sp * 10) / 10); return best;
+  }
+  /* Vista inteira, ao vivo */
+  function full(cv, st, hMax) {
+    const w = cv.parentElement.clientWidth; if (!w) return;
+    const multi = Math.max(...st.segs.map(q => q.of)), opt = { res: st.res, src: st.src, names: st.names, fing: st.fing, live: !!st.res, marks: multi === 2 ? 2 : 1 };
+    Object.assign(opt, fit(st.L, st.inst, w, hMax, opt));
+    const beat = Math.max(0, Math.min(st.total - .001, st.beat)), sg = st.segs.find(q => beat >= q.at && beat < q.at + q.to - q.from) || st.segs[st.segs.length - 1];
+    opt.cur = { beat: st.beat, b: beat - sg.at + sg.from, sg, run: st.run && st.beat >= 0 && st.beat < st.total, trail: st.trail };
+    rows(cv, st.L, st.inst, opt); return { sg, y: opt.y, rowH: opt.rowH };
   }
   /* Vista rolante */
   function scroll(cv, st) {
@@ -984,14 +1019,14 @@ const Score = (() => {
     order.forEach((s, i) => { const x = only ? w / 2 + sp : w * .28 + i * w * .2; note(g, { d: 4 }, x, yb, sp, I.pos[s], color || (only ? COL.ink : I.c)); if (!only) { g.fillStyle = COL.ink; g.font = `900 ${sp * 1.35}px Nunito`; g.textAlign = 'center'; g.fillText(NOTE_PT[s], x, yb + sp * (2.9 + lo)); } });
   }
   const svg = (k, sp = 10, w = 62, h = 48, y = 30) => { const s = sp / 250, gl = GLYPHS[k]; return `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true"><path fill="#3a3550" transform="translate(${w / 2 - gl.w * s / 2} ${y}) scale(${s} ${-s})" d="${gl.d}"/>@@</svg>`; };
-  return { rows, scroll, open, svg, kind, COL };
+  return { rows, full, scroll, open, svg, kind, COL };
 })();
 
 /* ===== Aplicativo ===== */
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const KEY = 'cordas-soltas-v1';
-const S = Object.assign({ inst: 'viola', first: true, prog: {}, xp: 0, streak: 0, last: '', rtl: { spk: null, ph: null }, vis: 0, level: 'easy', a4: 440, vNote: .8, vClick: .7, names: false, fing: true, phones: false, rep: true, part: 'A', mode: 'listen', tempo: 60 }, (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })());
+const S = Object.assign({ inst: 'viola', first: true, prog: {}, xp: 0, streak: 0, last: '', rtl: { spk: null, ph: null }, vis: 0, level: 'easy', a4: 440, vNote: .8, vClick: .7, names: false, fing: true, phones: false, rep: true, part: 'A', mode: 'listen', view: 'scroll', tempo: 60 }, (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })());
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } };
 const prog = () => S.prog[S.inst] || (S.prog[S.inst] = {});
 const rtlKey = () => S.phones ? 'ph' : 'spk';
@@ -1005,6 +1040,8 @@ const ICON = {
   tuner: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v8a5 5 0 0 0 10 0V3M14 16v9"/></svg>',
   set: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M4 8h9M21 8h3M4 20h3M15 20h9"/><circle cx="17" cy="8" r="3.4"/><circle cx="11" cy="20" r="3.4"/></svg>',
   x: '<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M4 4l14 14M18 4L4 18"/></svg>',
+  vf: '<svg viewBox="0 0 22 22" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"><path d="M3 4h16M3 8h16M3 14h16M3 18h16"/></svg>',
+  vs: '<svg viewBox="0 0 22 22" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h17M14 6l5 5-5 5"/></svg>',
   ear: '<svg viewBox="0 0 40 40" fill="currentColor"><path d="M20 5C11 5 5 12 5 21v9a5 5 0 0 0 5 5h3a2 2 0 0 0 2-2V23a2 2 0 0 0-2-2h-3c0-6 4-11 10-11s10 5 10 11h-3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3a5 5 0 0 0 5-5v-9C35 12 29 5 20 5z"/></svg>',
   metro: '<svg viewBox="0 0 40 40" fill="currentColor"><path d="M15 4h10l8 30a2.4 2.4 0 0 1-2.400 3H9.400A2.400 2.400 0 0 1 7 34z"/><path d="M19 28 31 8" stroke="#fff" stroke-width="3.500" stroke-linecap="round"/><circle cx="26.500" cy="15.500" r="3.600" fill="#fff"/></svg>',
 };
@@ -1112,11 +1149,12 @@ function setupView(L) {
   $('#lb').innerHTML = `<div class="ttl"><div class="m">${hero('happy', L.n % 2 === 0)}</div><div class="bubble"><h2>${L.n}. ${L.t}</h2><p class="mute">${L.tip}</p></div></div>
   <div class="score"><canvas id="pv" role="img" aria-label="Partitura da lição ${L.n}"></canvas></div>
   <div class="opts"><div class="modes" role="radiogroup" aria-label="Modo">${L.other ? `<div class="kv"><b>Sua parte</b><div class="seg" style="width:190px">${['A', 'B'].map(p => `<button data-part="${p}" class="${S.part === p ? 'on' : ''}">Parte ${p}</button>`).join('')}</div></div>` : ''}
-    <button class="mode" data-m="listen" role="radio">${ICON.ear}<div><b>Ouvir e tocar junto</b><span>Som de ${INST[S.inst].name.toLowerCase()} com a partitura rolando</span></div></button>
+    <button class="mode" data-m="listen" role="radio">${ICON.ear}<div><b>Ouvir e tocar junto</b><span>Som de ${INST[S.inst].name.toLowerCase()} acompanhando a partitura</span></div></button>
     <button class="mode" data-m="pulse" role="radio">${ICON.metro}<div><b>Só com o pulso</b><span>O instrumento não soa: você toca e o app diz se acertou</span></div></button>
     <div class="note" id="nt"></div></div>
-  <div class="card"><div class="bpm"><button class="btn sec" id="bm" aria-label="Mais devagar">−</button><div class="v"><b class="num" id="bv"></b> <span>bpm</span></div><button class="btn sec" id="bp" aria-label="Mais rápido">+</button></div><input type="range" id="br" min="40" max="132" step="1" aria-label="Andamento em bpm">
+  <div class="card"><div class="kv"><b>Partitura</b><div class="seg" style="width:210px">${[['scroll', 'Rolando'], ['full', 'Inteira']].map(v => `<button data-view="${v[0]}" class="${S.view === v[0] ? 'on' : ''}">${v[1]}</button>`).join('')}</div></div><div class="bpm"><button class="btn sec" id="bm" aria-label="Mais devagar">−</button><div class="v"><b class="num" id="bv"></b> <span>bpm</span></div><button class="btn sec" id="bp" aria-label="Mais rápido">+</button></div><input type="range" id="br" min="40" max="132" step="1" aria-label="Andamento em bpm">
     ${swt('sph', S.phones, 'Estou de fones')}${L.once ? '' : swt('srp', S.rep, L.sec ? 'Repetir cada trecho 4 vezes' : 'Fazer o ritornelo')}${swt('sfg', S.fing, 'Mostrar dedilhado')}${swt('snm', S.names, 'Mostrar nome das notas')}</div></div>`;
+  $$('[data-view]').forEach(b => b.onclick = () => { S.view = b.dataset.view; save(); $$('[data-view]').forEach(x => x.classList.toggle('on', x === b)); });
   $$('[data-part]').forEach(b => b.onclick = () => { S.part = b.dataset.part; save(); setupView(LF(L.n)); });
   const bv = v => { v = clamp(Math.round(v), 40, 132); S.tempo = v; $('#bv').textContent = v; $('#br').value = v; save(); }; bv(lessonBpm(L.n));
   $('#br').oninput = e => bv(+e.target.value); $('#bm').onclick = () => bv(lessonBpm(L.n) - 2); $('#bp').onclick = () => bv(lessonBpm(L.n) + 2);
@@ -1175,7 +1213,7 @@ async function start(L) {
   try { wake = await navigator.wakeLock.request('screen'); } catch (e) { }
   const bpm = lessonBpm(L.n), spb = 60 / bpm, segs = segments(L, S.rep), total = segs.total, I = INST[S.inst], ctx = AE.ctx;
   $('#lesson').classList.add('playing'); $('#lesson').scrollTop = 0;
-  $('#lb').innerHTML = `<div class="ttl"><div class="bubble" style="flex:1"><h2>${L.n}. ${L.t}</h2></div><button class="snd" id="snd" aria-pressed="${listen}"><span class="vu"><i></i><i></i><i></i></span><span>${INST[S.inst].name}</span></button><span class="chip num">${bpm} bpm</span></div><div class="score"><canvas id="cv" role="img" aria-label="Partitura rolando"></canvas><div class="count num" id="cnt"></div></div>
+  $('#lb').innerHTML = `<div class="ttl"><div class="bubble" style="flex:1"><h2>${L.n}. ${L.t}</h2></div><span class="chip num" id="pass"></span><button class="snd" id="vw" aria-label="Mudar a visualização da partitura"></button><button class="snd" id="snd" aria-pressed="${listen}"><span class="vu"><i></i><i></i><i></i></span><span>${INST[S.inst].name}</span></button><span class="chip num">${bpm} bpm</span></div><div class="score"><canvas id="cv" role="img" aria-label="Partitura rolando"></canvas><div class="count num" id="cnt"></div></div>
   <div class="live ${grade && mic ? '' : 'solo'}"><div class="meter"><div><div class="nn" id="nn">–</div><div class="cc num" id="cc">&nbsp;</div></div><div class="track"><div class="rail"></div><div class="mid"></div><div class="ndl" id="nd"></div></div></div>
   <div class="strs" aria-label="Cordas">${I.strings.map((s, i) => `<div class="str" data-s="${s}"><em>${ROM[3 - i]}</em><b>${NOTE_PT[s]}</b><u>0</u><i style="width:${7 - i * 1.4}px"></i></div>`).join('')}</div></div>`;
   $('#chip').textContent = grade && mic ? 'Corrigindo' : 'Tocando junto';
@@ -1188,9 +1226,12 @@ async function start(L) {
   const refs = Object.fromEntries(I.strings.map(q => [q, hz(I.midi[q], S.a4)])), lat = rtl();
   // o veredito sai quando o fim da nota chega ao ouvido: antecipa a entrada do microfone e meia janela de análise
   const lead = clamp(lat - (ctx.outputLatency || ctx.baseLatency || 0), .01, .3) + DSP.CFG[S.inst].W * DSP.CFG[S.inst].dec / ctx.sampleRate / 2 + .03;
+  let k0 = 0; segs.forEach(q => { q.n0 = k0; q.idx = new Map(); L.notes.forEach((n, i) => { if (n.b >= q.from && n.b < q.to) q.idx.set(i, k0++ - q.n0); }); });
   const R = run = { L, T0, spb, total, segs, notes, refs, lat, grade: grade && mic, listen, trail: [], last: null, alive: true, peak: -99, lastPitch: 0 };
   R.sc = new DSP.Scorer({ notes, refs, T0, spb, rtl: lat, level: S.level, inst: S.inst, lead }); R.an = new DSP.Analyzer(ctx.sampleRate, S.inst);
-  const tol = DSP.LEVELS[S.level].cents;
+  R.src = notes.map(n => n.src); const tol = DSP.LEVELS[S.level].cents;
+  const vw = () => { $('#lesson').classList.toggle('full', S.view === 'full'); $('#vw').innerHTML = S.view === 'full' ? ICON.vs + '<span>Rolando</span>' : ICON.vf + '<span>Inteira</span>'; $('#pass').textContent = ''; R.hMax = 0; }; vw();
+  $('#vw').onclick = () => { S.view = S.view === 'full' ? 'scroll' : 'full'; save(); vw(); }; window.onresize = () => { R.hMax = 0; };
   R.snd = listen; $('#snd').onclick = e => { R.snd = !R.snd; AE.notesOn(R.snd); $('#snd').setAttribute('aria-pressed', R.snd);
     if (R.snd && !S.phones && R.grade) { R.grade = false; R.trail.length = 0; $('#chip').textContent = 'Tocando junto'; $('#dr').className = 'drawer plain play'; $('.fb').innerHTML = '<div class="ic">♪</div><div><b>Toque junto</b><span>Sem fones, a correção fica desligada</span></div>'; } };
   if (mic) R.off = AE.onMic((b, t) => {
@@ -1204,7 +1245,12 @@ async function start(L) {
   const frame = () => {
     if (!R.alive) return; const cv = $('#cv'); if (!cv) return;
     const beat = (AE.heard() + S.vis + .008 - T0) / spb; R.beat = beat;
-    Score.scroll(cv, { L, inst: S.inst, beat, segs, total, res: R.grade ? R.sc.res : null, trail: R.trail, names: S.names, fing: S.fing, run: true });
+    const st = { L, inst: S.inst, beat, segs, total, src: R.src, res: R.grade ? R.sc.res : null, trail: R.trail, names: S.names, fing: S.fing, run: true };
+    if (S.view === 'full') {
+      if (!R.hMax) { const lv = $('.live'), box = cv.parentElement, room = $('#lesson').clientHeight - $('#dr').offsetHeight - $('.top').offsetHeight - ($('.ttl') ? $('.ttl').offsetHeight : 0) - (lv ? lv.offsetHeight : 0) - 14 * ($('.ttl').offsetHeight ? 1 : 0) - (lv && lv.offsetHeight ? 14 : 0) - 30; R.hMax = Math.max(150, room); }
+      const f = Score.full(cv, st, R.hMax); if (f) { const t = f.sg.of > 1 ? `${f.sg.letter} ${f.sg.pass + 1}ª vez` : ''; if ($('#pass').textContent !== t) $('#pass').textContent = t;
+        const el = $('#lesson'); if (el.scrollHeight > el.clientHeight + 40 && f.y !== R.fy) { R.fy = f.y; el.scrollTo({ top: Math.max(0, cv.parentElement.offsetTop + f.y - 40), behavior: 'smooth' }); } }
+    } else Score.scroll(cv, st);
     const ci = $('#cnt'), t = beat < -.02 && beat > -4.2 ? String(clamp(Math.floor(beat) + 5, 1, 4)) : ''; if (ci.textContent !== t) ci.textContent = t;
     $('.bar i').style.width = clamp(beat / total * 100, 0, 100) + '%';
     meter(R); strings(R, beat); R.vu = Math.max(AE.level(), (R.vu || 0) * .9); $$('.vu i').forEach((e, i) => e.style.opacity = R.vu > [.02, .12, .28][i] ? 1 : .25);
